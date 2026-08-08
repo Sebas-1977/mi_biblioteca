@@ -16,111 +16,111 @@ class LibroController
     private const CARPETA_PORTADAS = __DIR__ . '/../public/img/portadas/';
 
     public static function index(Router $router): void
-{
-    $busqueda = trim($_GET['q'] ?? $_GET['busqueda'] ?? '');
-    $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
-    
-    // Capturamos el estado activo ('1', '0' o 'todos'). Por defecto '1'
-    $estado = $_GET['estado'] ?? '1';
+    {
+        $busqueda = trim($_GET['q'] ?? $_GET['busqueda'] ?? '');
+        $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
+        
+        // Capturamos el estado activo ('1', '0' o 'todos'). Por defecto '1'
+        $estado = $_GET['estado'] ?? '1';
 
-    $libros = Libros::listar(
-        $busqueda,
-        $pagina,
-        self::POR_PAGINA,
-        $estado
-    );
+        $libros = Libros::listar(
+            $busqueda,
+            $pagina,
+            self::POR_PAGINA,
+            $estado
+        );
 
-    $datos = [
-        'titulo'   => 'Libros',
-        'libros'   => $libros,
-        'busqueda' => $busqueda,
-        'pagina'   => $pagina,
-        'estado'   => $estado
-    ];
+        $datos = [
+            'titulo'   => 'Libros',
+            'libros'   => $libros,
+            'busqueda' => $busqueda,
+            'pagina'   => $pagina,
+            'estado'   => $estado
+        ];
 
-    $esAjax = isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
+        $esAjax = isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
 
-    if ($esAjax) {
-        extract($datos);
-        require __DIR__ . '/../views/libros/_tabla.php';
-        return;
-    }
-
-    $router->render('libros/index', $datos);
-}
-
-    public static function crear(Router $router): void
-{
-    $libro = new Libros();
-    $errores = [];
-
-    // Detectamos si la petición es AJAX
-    $esAjax = isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
-
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $datos = $_POST;
-
-        // Procesar la imagen subida si existe
-        $nombreImagen = self::procesarPortada($_FILES['portada'] ?? null);
-        if ($nombreImagen) {
-            $datos['portada'] = '/img/portadas/' . $nombreImagen;
+        if ($esAjax) {
+            extract($datos);
+            require __DIR__ . '/../views/libros/_tabla.php';
+            return;
         }
 
-        // Sincronizamos el objeto con los datos procesados
-        $libro->sincronizar($datos);
-        $errores = $libro->validar();
+        $router->render('libros/index', $datos);
+    }
 
-        if (empty($errores)) {
-            $resultado = $libro->guardar();
+    public static function crear(Router $router): void
+    {
+        $libro = new Libros();
+        $errores = [];
 
-            if ($resultado) {
-                // RESPUESTA EXITOSA PARA AJAX
-                if ($esAjax) {
-                    header('Content-Type: application/json');
-                    echo json_encode([
-                        'exito' => true,
-                        'mensaje' => 'Libro creado correctamente',
-                        'redireccion' => '/libros'
-                    ]);
+        // Detectamos si la petición es AJAX
+        $esAjax = isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $datos = $_POST;
+
+            // Procesar la imagen subida si existe
+            $nombreImagen = self::procesarPortada($_FILES['portada'] ?? null);
+            if ($nombreImagen) {
+                $datos['portada'] = '/img/portadas/' . $nombreImagen;
+            }
+
+            // Sincronizamos el objeto con los datos procesados
+            $libro->sincronizar($datos);
+            $errores = $libro->validar();
+
+            if (empty($errores)) {
+                $resultado = $libro->guardar();
+
+                if ($resultado) {
+                    // RESPUESTA EXITOSA PARA AJAX
+                    if ($esAjax) {
+                        header('Content-Type: application/json');
+                        echo json_encode([
+                            'exito' => true,
+                            'mensaje' => 'Libro creado correctamente',
+                            'redireccion' => '/libros'
+                        ]);
+                        exit;
+                    }
+
+                    // RESPUESTA TRADICIONAL
+                    header('Location: /libros');
                     exit;
                 }
+            }
 
-                // RESPUESTA TRADICIONAL
-                header('Location: /libros');
+            // Si hay errores de validación y se llegó a subir una imagen, la eliminamos de inmediato
+            if (!empty($libro->portada)) {
+                self::eliminarArchivoPortada($libro->portada);
+            }
+
+            // RESPUESTA DE ERRORES PARA AJAX
+            if ($esAjax) {
+                header('Content-Type: application/json');
+                http_response_code(422); // Unprocessable Entity
+                echo json_encode([
+                    'exito' => false,
+                    'errores' => $errores
+                ]);
                 exit;
             }
         }
 
-        // Si hay errores de validación y se llegó a subir una imagen, la eliminamos
-        if (!empty($libro->portada)) {
-            self::eliminarArchivoPortada($libro->portada);
-        }
+        // Obtenemos los autores y géneros para poblar los selectores
+        $autores = Autores::all();
+        $generos = Generos::all();
 
-        // RESPUESTA DE ERRORES PARA AJAX
-        if ($esAjax) {
-            header('Content-Type: application/json');
-            http_response_code(422); // Código 422: Unprocessable Entity
-            echo json_encode([
-                'exito' => false,
-                'errores' => $errores
-            ]);
-            exit;
-        }
+        // Carga de la vista normal (GET o fallback)
+        $router->render('libros/crear', [
+            'titulo'  => 'Nuevo Libro',
+            'libro'   => $libro,
+            'autores' => $autores,
+            'generos' => $generos,
+            'errores' => $errores
+        ]);
     }
-
-    // Obtenemos los autores y géneros para poblar los selectores en el formulario
-    $autores = Autores::all();
-    $generos = Generos::all();
-
-    // Carga de la vista normal (GET o fallback)
-    $router->render('libros/crear', [
-        'titulo'  => 'Nuevo Libro',
-        'libro'   => $libro,
-        'autores' => $autores,
-        'generos' => $generos,
-        'errores' => $errores
-    ]);
-}
 
     public static function editar(Router $router): void
     {
@@ -143,7 +143,6 @@ class LibroController
                 exit;
             }
 
-            // Si es navegación tradicional, redirigimos
             header('Location: /libros');
             exit;
         }
@@ -151,7 +150,7 @@ class LibroController
         // 2. Procesamiento del Formulario (POST)
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $datos = $_POST;
-            $imagenAnterior = $libro->portada;
+            $imagenAnterior = $libro->portada; // Ruta guardada previa (ej: /img/portadas/xyz.webp)
 
             // Procesar si subieron una nueva portada
             $nombreImagen = self::procesarPortada($_FILES['portada'] ?? null);
@@ -167,27 +166,29 @@ class LibroController
             $errores = $libro->validar();
 
             if (empty($errores)) {
-                $libro->guardar();
+                $resultado = $libro->guardar();
 
-                // Si se guardó correctamente y se subió una nueva imagen, eliminamos la anterior
-                if ($nombreImagen && !empty($imagenAnterior) && $nombreImagen !== $imagenAnterior) {
-                    self::eliminarArchivoPortada($imagenAnterior);
-                }
+                if ($resultado) {
+                    // SI SE SUBIÓ UNA NUEVA IMAGEN Y EXISTÍA UNA ANTERIOR, ELIMINAMOS LA VIEJA
+                    if ($nombreImagen && !empty($imagenAnterior)) {
+                        self::eliminarArchivoPortada($imagenAnterior);
+                    }
 
-                // Respuesta Éxito para AJAX
-                if ($esAjax) {
-                    header('Content-Type: application/json');
-                    echo json_encode([
-                        'ok' => true,
-                        'mensaje' => 'Libro actualizado correctamente',
-                        'redireccion' => '/libros'
-                    ]);
+                    // Respuesta Éxito para AJAX
+                    if ($esAjax) {
+                        header('Content-Type: application/json');
+                        echo json_encode([
+                            'ok' => true,
+                            'mensaje' => 'Libro actualizado correctamente',
+                            'redireccion' => '/libros'
+                        ]);
+                        exit;
+                    }
+
+                    // Respuesta Éxito Tradicional
+                    header('Location: /libros?exito=1');
                     exit;
                 }
-
-                // Respuesta Éxito Tradicional
-                header('Location: /libros?exito=1');
-                exit;
             }
 
             // Si fallaron las validaciones y habíamos subido un archivo nuevo, lo borramos para no dejar basura
@@ -242,7 +243,7 @@ class LibroController
         ];
 
         if (!array_key_exists($mimeType, $extensionesPermitidas)) {
-            return null; // O puedes retornar false/arrojar excepción si quieres manejar un error específico
+            return null;
         }
 
         // 2. Crear la carpeta si no existe
@@ -257,9 +258,7 @@ class LibroController
 
         // 4. Mover el archivo subido de la carpeta temporal a la ruta final
         if (move_uploaded_file($file['tmp_name'], $destino)) {
-            
-    return $nombreUnico;
-
+            return $nombreUnico;
         }
 
         return null;
@@ -267,14 +266,26 @@ class LibroController
 
     /**
      * Borra el archivo de la imagen del servidor si existe.
+     * Acepta tanto un nombre simple (imagen.webp) como una ruta relativa (/img/portadas/imagen.webp)
      */
-    private static function eliminarArchivoPortada(string $nombreArchivo): void
+    private static function eliminarArchivoPortada(?string $rutaOImagen): void
     {
-        $nombreArchivo = basename($nombreArchivo);
+        if (empty($rutaOImagen)) {
+            return;
+        }
 
-    $ruta = self::CARPETA_PORTADAS . $nombreArchivo;
-        if (file_exists($ruta) && is_file($ruta)) {
-            unlink($ruta);
+        // Extrae únicamente el nombre del archivo (evita problemas con prefijos de ruta)
+        $nombreArchivo = basename($rutaOImagen);
+
+        // Protección extra: Nunca eliminar el .gitkeep
+        if ($nombreArchivo === '.gitkeep') {
+            return;
+        }
+
+        $rutaAbsoluta = self::CARPETA_PORTADAS . $nombreArchivo;
+
+        if (file_exists($rutaAbsoluta) && is_file($rutaAbsoluta)) {
+            unlink($rutaAbsoluta);
         }
     }
 
@@ -308,7 +319,7 @@ class LibroController
             exit;
         }
 
-        // 3. Ejecutamos la baja (Soft Delete o cambio de estado activo = 0)
+        // 3. Ejecutamos la baja (Soft Delete / activo = 0)
         $resultado = $libro->baja();
 
         // 4. Respuesta para AJAX
@@ -377,37 +388,37 @@ class LibroController
     }
 
     /**
- * Muestra el listado de libros inactivos
- */
-public static function bajas(Router $router): void
-{
-    $busqueda = trim($_GET['q'] ?? $_GET['busqueda'] ?? '');
-    $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
+     * Muestra el listado de libros inactivos
+     */
+    public static function bajas(Router $router): void
+    {
+        $busqueda = trim($_GET['q'] ?? $_GET['busqueda'] ?? '');
+        $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
 
-    // Pasamos el estado inactivo (0) a tu método listar
-    $libros = Libros::listar(
-        $busqueda,
-        $pagina,
-        self::POR_PAGINA,
-        0 // Indica que recupere los inactivos (activo = 0)
-    );
+        // Pasamos el estado inactivo (0) al método listar
+        $libros = Libros::listar(
+            $busqueda,
+            $pagina,
+            self::POR_PAGINA,
+            0 // Indica que recupere los inactivos (activo = 0)
+        );
 
-    $datos = [
-        'titulo'   => 'Libros Inactivos',
-        'libros'   => $libros,
-        'busqueda' => $busqueda,
-        'pagina'   => $pagina
-    ];
+        $datos = [
+            'titulo'   => 'Libros Inactivos',
+            'libros'   => $libros,
+            'busqueda' => $busqueda,
+            'pagina'   => $pagina
+        ];
 
-    // Detección de petición AJAX
-    $esAjax = isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
+        // Detección de petición AJAX
+        $esAjax = isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
 
-    if ($esAjax) {
-        extract($datos);
-        require __DIR__ . '/../views/libros/_tabla_bajas.php';
-        return;
+        if ($esAjax) {
+            extract($datos);
+            require __DIR__ . '/../views/libros/_tabla_bajas.php';
+            return;
+        }
+
+        $router->render('libros/bajas', $datos);
     }
-
-    $router->render('libros/bajas', $datos);
-}
 }
