@@ -1,0 +1,63 @@
+Opción 1: Sistema de Pestañas (Tabs) — Recomendado
++---------------------------------------------------------------------------------------+
+| Libros                                                           [ + Nuevo libro ]    |
+|                                                                                       |
+|  ( Activos 15 )   ( Inactivos 4 )   ( Todos 19 )                                      |
+|  --------------                                                                       |
+|  [🔍 Buscar por título, autor o género...    ]                                        |
+|                                                                                       |
+|  ID  TÍTULO                 AUTOR       GÉNERO    PORTADA    ESTADO      ACCIONES     |
+|  --  ---------------------  ----------  --------  -------  ------------  ------------ |
+|  17  Memoria del fuego...   E. Galeano  Novela    [🖼️]     [ Activo ]   [Editar] [Baja] |
+|  16  Memorias del Fuego...  E. Galeano  Novela    [🖼️]     [ Activo ]   [Editar] [Baja] |
++---------------------------------------------------------------------------------------+
+
++---------------------------------------------------------------------------------------+
+| Libros                                                           [ + Nuevo libro ]    |
+|                                                                                       |
+|  ( Activos 15 )   ( Inactivos 4 )   ( Todos 19 )                                      |
+|                  ----------------                                                     |
+|  [🔍 Buscar por título, autor o género...    ]                                        |
+|                                                                                       |
+|  ID  TÍTULO                 AUTOR       GÉNERO    PORTADA    ESTADO      ACCIONES     |
+|  --  ---------------------  ----------  --------  -------  ------------  ------------ |
+|  09  El Aleph               J.L. Borges Cuento    [🖼️]     [Inactivo]   [ Alta ]     |
+|  04  Ficciones              J.L. Borges Cuento    [🖼️]     [Inactivo]   [ Alta ]     |
++---------------------------------------------------------------------------------------+
+
+Opción 2: Botón de Acceso Secundario ("Ver Inactivos")
+Añade un botón estilo outline (transparente con borde) al lado del botón principal + Nuevo libro.
+
++---------------------------------------------------------------------------------------+
+| Libros                                        [ 🗑️ Ver Inactivos ]  [ + Nuevo libro ] |
+|                                                                                       |
+|  [🔍 Buscar por título, autor o género...    ]                                        |
+|                                                                                       |
+|  ID  TÍTULO                 AUTOR       GÉNERO    PORTADA    ESTADO      ACCIONES     |
+|  --  ---------------------  ----------  --------  -------  ------------  ------------ |
+|  17  Memoria del fuego...   E. Galeano  Novela    [🖼️]     [ Activo ]   [Editar] [Baja] |
++---------------------------------------------------------------------------------------+
+
+Opción 3: Selector / Dropdown en la Barra de Filtros
+Mantiene el buscador y agrega un desplegable <select> para filtrar por estado.
+
++---------------------------------------------------------------------------------------+
+| Libros                                                           [ + Nuevo libro ]    |
+|                                                                                       |
+|  [🔍 Buscar por título, autor...   ]  [ Estado: Solo Activos ▾ ]                      |
+|                                       | Solo Activos           |                      |
+|                                       | Solo Inactivos         |                      |
+|                                       | Todos                  |                      |
+|                                       +------------------------+                      |
+|  ID  TÍTULO                 AUTOR       GÉNERO    PORTADA    ESTADO      ACCIONES     |
+|  --  ---------------------  ----------  --------  -------  ------------  ------------ |
+|  17  Memoria del fuego...   E. Galeano  Novela    [🖼️]     [ Activo ]   [Editar] [Baja] |
++---------------------------------------------------------------------------------------+
+
+Comparativa rápidaOpciónProsContras1. Pestañas (Tabs)Explicita visualmente cuántos libros 
+hay en cada estado; navegación de 
+1 clic.Ocupa una línea vertical adicional.
+2. Botón SecundarioMantiene la interfaz súper limpia; ideal si no se consultan los inactivos 
+con frecuencia.Oculta los datos dados de baja tras un segundo nivel de navegación.
+3. DropdownOcupa poco espacio y combina bien con futuros filtros (categorías, autores).
+Requiere 2 clics para desplegar y seleccionar.

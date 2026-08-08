@@ -1,0 +1,31 @@
+# ----------------------------------------------------------------------
+# Archivos de configuración y claves (¡Por seguridad!)
+# ----------------------------------------------------------------------
+.env
+/includes/database.php   # Si tienes credenciales locales ahí escritas en duro
+
+# ----------------------------------------------------------------------
+# Archivos subidos por usuarios (Portadas de libros)
+# ----------------------------------------------------------------------
+# Ignoramos las fotos que subes en desarrollo, pero conservamos la carpeta
+/public/img/portadas/*
+!/public/img/portadas/.gitkeep
+
+# ----------------------------------------------------------------------
+# IDEs y Editores
+# ----------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+
+# ----------------------------------------------------------------------
+# Archivos del Sistema Operativo
+# ----------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ----------------------------------------------------------------------
+# Dependencias (por si usas Composer)
+# ----------------------------------------------------------------------
+/vendor/

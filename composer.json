@@ -1,0 +1,19 @@
+{
+    "name": "seba/crud-libros",
+    "description": "PHP POO JS AJAX MYSQL MVC CSS HTML",
+    "type": "project",
+    "autoload": {
+    "psr-4": {
+        "MVC\\" : "./",
+        "Model\\": "./models",
+        "Controllers\\": "./controllers"
+        }
+    },
+    "authors": [
+        {
+            "name": "Sebastian Rodriguez",
+            "email": "sebasrodridanu@gmail.com"
+        }
+    ],
+    "require": {}
+}

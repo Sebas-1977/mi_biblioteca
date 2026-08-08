@@ -1,0 +1,191 @@
+app/
+│
+├── controllers/
+├── models/
+├── views/
+│
+├── MVC/
+│      Router.php
+│
+├── includes/
+│      app.php
+│      database.php
+│
+├── public/
+│
+└── vendor/
+
+Mi propuesta de trabajo
+
+Yo no escribiría todo de una porque terminaríamos con un archivo de 500 líneas difícil de revisar.
+
+Prefiero hacerlo como si estuviéramos desarrollando una librería profesional.
+
+Etapa 1
+
+✅ ActiveRecord completo (bien comentado y reutilizable).
+
+Etapa 2
+
+✅ Libro.php.
+
+Etapa 3
+
+✅ LibroController.
+
+Etapa 4
+
+✅ Router AJAX.
+
+Etapa 5
+
+✅ Frontend (HTML + CSS + JS).
+
+Etapa 6
+
+✅ Búsqueda en tiempo real.
+
+Etapa 7
+
+✅ Paginación AJAX.
+
+Etapa 8
+
+✅ Subida de portadas.
+
+Etapa 9
+
+✅ SweetAlert2.
+
+Etapa 10
+
+✅ Validaciones cliente + servidor.
+
+--------------------------
+
+Creo que al finalizar no vas a tener solamente un CRUD de libros. Vas a tener una base profesional MVC + POO + AJAX que podrás reutilizar prácticamente sin cambios en cualquier CRUD que hagas en PHP. Esa sería la calidad de código a la que apuntaría.
+
+public static function setDB()
+
+public static function getErrores()
+
+public function validar()
+
+public function sincronizar()
+
+public function guardar()
+
+public function crear()
+
+public function actualizar()
+
+public function baja()
+
+public function alta()
+
+public static function all()
+
+public static function find()
+
+public static function where()
+
+public static function buscar()
+
+public static function buscarPaginado()
+
+public static function count()
+
+public static function totalPaginas()
+
+ActiveRecord
+La versión 1.0 incluirá
+Configuración
+setDB()
+getDB()
+getErrores()
+Persistencia
+guardar()
+crear()
+actualizar()
+Consultas
+all()
+find()
+where()
+whereAll()
+first()
+buscar()
+buscarPaginado()
+Soft Delete
+baja()
+alta()
+Estadísticas
+count()
+totalPaginas()
+Utilidades
+sincronizar()
+atributos()
+crearObjeto()
+crearObjetos()
+consultarSQL()
+
+La versión 1.1 (cuando terminemos el CRUD)
+
+Sin modificar el código existente, agregaremos:
+
+Relaciones (belongsTo(), hasMany() si vale la pena).
+JOIN automáticos.
+Ordenamiento dinámico.
+Filtros múltiples.
+Cache simple de consultas.
+Transacciones.
+Logging de errores.
+
+Es decir, el ActiveRecord irá creciendo sin obligarnos a reescribir los modelos.
+
+Mi propuesta
+
+Lo vamos a hacer en 4 entregas, que al final forman un único archivo models/ActiveRecord.php.
+
+Parte 1 (150 líneas aprox.)
+Configuración
+Constructor
+Validaciones
+Sincronización
+CRUD (guardar, crear, actualizar)
+Parte 2
+all()
+find()
+where()
+whereAll()
+first()
+buscar()
+Parte 3
+buscarPaginado()
+count()
+totalPaginas()
+baja()
+alta()
+Parte 4
+Métodos internos
+consultarSQL()
+crearObjeto()
+crearObjetos()
+Optimizaciones y comentarios finales
+
+Mi compromiso
+
+No va a ser un ActiveRecord copiado de internet ni de un curso. Va a estar diseñado específicamente para la forma en que vos desarrollás:
+
+PHP 8.3+
+MVC
+PDO
+AJAX/Fetch
+Soft Delete (activo)
+CRUD reutilizable
+Tipado estricto
+Seguridad con prepared statements
+Preparado para crecer (JOIN, relaciones, filtros, etc.)
+
+Prefiero invertir un poco más de tiempo ahora y que después no tengamos que volver a reescribir la base.
+
+

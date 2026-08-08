@@ -1,0 +1,696 @@
+/* ==========================================================================
+   1. VARIABLES GLOBALES Y RESET
+   ========================================================================== */
+:root {
+  /* Color Palette */
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  
+  /* Status Colors */
+  --success-bg: #dcfce7;
+  --success-text: #15803d;
+  --warning-bg: #fef3c7;
+  --warning-text: #b45309;
+  --danger-bg: #fee2e2;
+  --danger-text: #b91c1c;
+  --info-bg: #e0e7ff;
+  --info-text: #3730a3;
+
+  /* Shadows & Radius */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  --transition: all 0.2s ease-in-out;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  line-height: 1.5;
+  padding: 2rem 1rem;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   ESTILOS BASE PARA CAMPOS DE FORMULARIO (.campo)
+   ========================================================================== */
+.campo input[type="text"],
+.campo input[type="number"],
+.campo input[type="date"],
+.campo select,
+.campo textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background-color: #f9fafb;
+  font-family: inherit; /* Hereda la fuente general del proyecto */
+  font-size: 0.95rem;
+  color: #1f2937;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+/* Efecto Focus al hacer clic en cualquier campo */
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus {
+  outline: none;
+  border-color: #2563eb; /* Azul elegante */
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+/* ==========================================================================
+   1. MEJORAS PARA EL TEXTAREA (GÉNEROS)
+   ========================================================================== */
+.campo textarea {
+  min-height: 110px;
+  resize: vertical; /* Permite redimensionar solo hacia abajo, sin romper el ancho */
+  line-height: 1.5;
+}
+
+.campo textarea::placeholder {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.campo-full {
+  grid-column: 1 / -1;
+}
+
+/* ==========================================================================
+   2. MEJORAS PARA EL INPUT DE FECHA (AUTORES)
+   ========================================================================== */
+.campo input[type="date"] {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* Personalización del ícono del calendario en Chrome/Edge/Safari */
+.campo input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 4px;
+  filter: invert(0.4); /* Le da un tono gris oscuro elegante al ícono */
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.campo input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  filter: invert(0.1); /* Se oscurece al pasar el mouse */
+  transform: scale(1.1); /* Ligero zoom interactivo */
+}
+
+/* ==========================================================================
+   2. NAVBAR / BARRA DE NAVEGACIÓN
+   ========================================================================== */
+.navbar {
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.85rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 2rem;
+}
+
+.navbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navbar__icon {
+  font-size: 1.25rem;
+  color: var(--primary);
+}
+
+.navbar__title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-main);
+  text-decoration: none;
+}
+
+.navbar__menu {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 1.5rem;
+}
+
+.navbar__menu li {
+  display: inline-flex;
+  align-items: center;
+}
+
+.navbar__link {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: var(--transition);
+  padding: 0.35rem 0;
+  position: relative;
+}
+
+.navbar__link:hover {
+  color: var(--primary);
+}
+
+.navbar__link--active {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.navbar__link--active::after {
+  content: '';
+  position: absolute;
+  bottom: -0.85rem;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--primary);
+  border-radius: 2px;
+}
+
+/* ==========================================================================
+   3. BARRA SUPERIOR (HEADER, TOOLBAR Y TABS DE ESTADO)
+   ========================================================================== */
+.header-acciones {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.header-acciones h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* Pestañas de Estado (Tabs) */
+.tabs-estado {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.tab-item {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  background: transparent;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: var(--transition);
+}
+
+.tab-item:hover {
+  color: var(--primary);
+}
+
+.tab-item.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+/* Toolbar & Buscador */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.toolbar .buscador {
+  position: relative;
+  flex: 1;
+  max-width: 500px;
+  display: flex;
+  align-items: center;
+}
+
+.toolbar .buscador input {
+  width: 100%;
+  margin: 0;
+  padding-right: 95px;
+}
+
+#buscando {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   4. TABLA Y CARD CONTENEDORA
+   ========================================================================== */
+.tabla-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  overflow-x: auto;
+  margin-top: 1.5rem;
+}
+
+table, .tabla {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+thead {
+  background-color: #f1f5f9;
+  border-bottom: 2px solid var(--border-color);
+}
+
+th {
+  padding: 1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+tbody tr {
+  transition: var(--transition);
+}
+
+tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.sin-datos {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2.5rem;
+  font-style: italic;
+}
+
+/* Imágenes de Portada en Tabla (relación 3:4) */
+td img, .tabla img {
+  width: 45px;
+  height: 60px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 4px;
+  box-shadow: var(--shadow-sm);
+  display: block;
+}
+
+/* ==========================================================================
+   5. BADGES Y ESTADOS
+   ========================================================================== */
+.badge, .estado {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* Estado del libro */
+.estado-disponible { background: var(--success-bg); color: var(--success-text); }
+.estado-prestado { background: var(--warning-bg); color: var(--warning-text); }
+.estado-reservado { background: var(--info-bg); color: var(--info-text); }
+
+/* Badges Activo / Inactivo */
+.badge-activo { background-color: var(--success-bg); color: var(--success-text); }
+.badge-inactivo { background-color: var(--danger-bg); color: var(--danger-text); }
+
+/* ==========================================================================
+   6. BOTONES Y ACCIONES
+   ========================================================================== */
+
+/* Regla base para todos los botones */
+button, 
+.btn-editar, 
+.btn-cancelar, 
+.btn-guardar, 
+.btn-baja,
+.btn-alta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  line-height: 1;
+  box-sizing: border-box;
+  vertical-align: middle;
+  transition: var(--transition);
+}
+
+/* Celda de acciones en la tabla */
+td.acciones {
+  white-space: nowrap;
+}
+
+td.acciones .btn-editar,
+td.acciones .btn-baja,
+td.acciones .btn-alta {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  height: 32px;
+  margin-right: 0.35rem;
+}
+
+td.acciones .btn-baja:last-child,
+td.acciones .btn-alta:last-child {
+  margin-right: 0;
+}
+
+/* Variantes de Botones */
+.btn-guardar {
+  background-color: var(--primary);
+  color: #ffffff;
+}
+.btn-guardar:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-editar {
+  background-color: #f1f5f9;
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+}
+.btn-editar:hover {
+  background-color: #e2e8f0;
+}
+
+.btn-baja {
+  background-color: var(--danger-bg);
+  color: var(--danger-text);
+}
+.btn-baja:hover {
+  background-color: #fca5a5;
+}
+
+.btn-alta {
+  background-color: var(--success-bg);
+  color: var(--success-text);
+}
+.btn-alta:hover {
+  background-color: #86efac;
+}
+
+.btn-cancelar {
+  background-color: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+}
+.btn-cancelar:hover {
+  background-color: #f1f5f9;
+  color: var(--text-main);
+}
+
+/* Botón "Nuevo" (+ Nuevo libro) */
+.btn-nuevo,
+a.btn-nuevo,
+.toolbar .btn-nuevo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--primary);
+  color: #ffffff !important;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 0.65rem 1.25rem;
+  height: 42px;
+  border-radius: var(--radius-sm);
+  text-decoration: none !important;
+  white-space: nowrap;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0.05) 100%);
+  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.25), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: var(--transition);
+  box-sizing: border-box;
+}
+
+.btn-nuevo:visited,
+a.btn-nuevo:visited {
+  color: #ffffff !important;
+}
+
+.btn-nuevo:hover,
+a.btn-nuevo:hover {
+  background-color: var(--primary-hover);
+  color: #ffffff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px -3px rgba(79, 70, 229, 0.35), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-nuevo:active,
+a.btn-nuevo:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px -1px rgba(79, 70, 229, 0.2);
+}
+
+/* ==========================================================================
+   7. FORMULARIOS Y GRID LAYOUT
+   ========================================================================== */
+.form-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
+  padding: 2rem;
+  max-width: 800px;
+  margin: 1.5rem auto;
+}
+
+.form-card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-main);
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .campo:has(#titulo),
+  .campo:first-child {
+    grid-column: span 2;
+  }
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.campo label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+input[type="text"],
+input[type="number"],
+input[type="file"],
+select {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-size: 0.95rem;
+  outline: none;
+  transition: var(--transition);
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  background-color: #ffffff;
+}
+
+.preview-portada {
+  margin-top: 1rem;
+  display: inline-block;
+  padding: 0.75rem;
+  background: var(--bg-main);
+  border-radius: var(--radius-sm);
+}
+
+.preview-portada img {
+  width: 120px;
+  height: 160px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-color);
+}
+
+.acciones-form {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  justify-content: flex-end;
+}
+
+/* ==========================================================================
+   8. PAGINACIÓN
+   ========================================================================== */
+.paginacion {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.pagina-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 0.75rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.pagina-btn:hover {
+  background-color: var(--bg-main);
+  border-color: #cbd5e1;
+  color: var(--text-main);
+}
+
+.pagina-btn.activa {
+  background-color: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+}
+
+/* ==========================================================================
+   9. FOOTER
+   ========================================================================== */
+.footer {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: 4rem;
+}
+
+.footer__text {
+  margin: 0;
+}
+
+/* ==========================================================================
+   ALERTAS Y NOTIFICACIONES
+   ========================================================================== */
+.alertas-contenedor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.alerta {
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1rem;
+}
+
+/* Alerta de Éxito (Verde) */
+.alerta-exito {
+  background-color: var(--success-bg);
+  color: var(--success-text);
+  border: 1px solid #bbf7d0;
+}
+
+/* Alerta de Error (Rojo) */
+.alerta-error {
+  background-color: var(--danger-bg);
+  color: var(--danger-text);
+  border: 1px solid #fecaca;
+}
