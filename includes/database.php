@@ -2,10 +2,10 @@
 
     // Configuración base de datos
 
-    $db_host = 'localhost';
-    $db_nombre = 'biblioteca';
-    $db_usuario = 'root';
-    $db_password = '';
+    $db_host = $_ENV['DB_HOST'] ?? 'localhost';
+    $db_nombre = $_ENV['DB_NAME'] ?? 'biblioteca';
+    $db_usuario = $_ENV['DB_USER'] ?? 'root';
+    $db_password = $_ENV['DB_PASS'] ?? '';
 
     try {
         // Crear conexión PDO

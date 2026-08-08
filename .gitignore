@@ -2,7 +2,6 @@
 # Archivos de configuración y claves (¡Por seguridad!)
 # ----------------------------------------------------------------------
 .env
-/includes/database.php   # Si tienes credenciales locales ahí escritas en duro
 
 # ----------------------------------------------------------------------
 # Archivos subidos por usuarios (Portadas de libros)
