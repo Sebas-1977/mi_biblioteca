@@ -17,6 +17,9 @@ ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/conf-available/*.conf
 
+# Redirigir cualquier ruta que no sea un archivo físico hacia /index.php (Router)
+RUN echo "FallbackResource /index.php" >> /etc/apache2/apache2.conf
+
 # Copiar el código del proyecto al contenedor
 COPY . /var/www/html/
 
