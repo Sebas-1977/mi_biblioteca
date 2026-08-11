@@ -6,11 +6,12 @@
     $db_nombre = $_ENV['DB_NAME'] ?? 'biblioteca';
     $db_usuario = $_ENV['DB_USER'] ?? 'root';
     $db_password = $_ENV['DB_PASS'] ?? '';
+    $db_puerto = $_ENV['DB_PORT'] ?? '3306'; // <--- Opcional pero recomendado
 
     try {
         // Crear conexión PDO
         $db = new PDO(
-            "mysql:host={$db_host};dbname={$db_nombre};charset=utf8mb4",
+            "mysql:host={$db_host};port={$db_puerto};dbname={$db_nombre};charset=utf8mb4",
             $db_usuario,
             $db_password
         );
