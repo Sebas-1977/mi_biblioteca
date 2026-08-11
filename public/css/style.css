@@ -24,7 +24,7 @@
   /* Shadows & Radius */
   --radius-sm: 6px;
   --radius-md: 12px;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
   --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
   --transition: all 0.2s ease-in-out;
@@ -49,79 +49,38 @@ body {
   margin: 0 auto;
 }
 
-/* ==========================================================================
-   ESTILOS BASE PARA CAMPOS DE FORMULARIO (.campo)
-   ========================================================================== */
-.campo input[type="text"],
-.campo input[type="number"],
-.campo input[type="date"],
-.campo select,
-.campo textarea {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  background-color: #f9fafb;
-  font-family: inherit; /* Hereda la fuente general del proyecto */
-  font-size: 0.95rem;
-  color: #1f2937;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-  box-sizing: border-box;
+/* Visibilidad Accesible (Lectores de Pantalla) */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }
 
-/* Efecto Focus al hacer clic en cualquier campo */
-.campo input:focus,
-.campo select:focus,
-.campo textarea:focus {
-  outline: none;
-  border-color: #2563eb; /* Azul elegante */
-  background-color: #ffffff;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-}
-
-/* ==========================================================================
-   1. MEJORAS PARA EL TEXTAREA (GÉNEROS)
-   ========================================================================== */
-.campo textarea {
-  min-height: 110px;
-  resize: vertical; /* Permite redimensionar solo hacia abajo, sin romper el ancho */
-  line-height: 1.5;
-}
-
-.campo textarea::placeholder {
-  color: #9ca3af;
-  font-style: italic;
-}
-
-.campo-full {
-  grid-column: 1 / -1;
+.sr-only-focusable:focus {
+  position: fixed !important;
+  top: 10px;
+  left: 10px;
+  z-index: 9999;
+  width: auto !important;
+  height: auto !important;
+  padding: 0.6rem 1rem;
+  background-color: var(--bg-card);
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  clip: auto !important;
+  white-space: normal !important;
 }
 
 /* ==========================================================================
-   2. MEJORAS PARA EL INPUT DE FECHA (AUTORES)
-   ========================================================================== */
-.campo input[type="date"] {
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-}
-
-/* Personalización del ícono del calendario en Chrome/Edge/Safari */
-.campo input[type="date"]::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  border-radius: 4px;
-  padding: 4px;
-  filter: invert(0.4); /* Le da un tono gris oscuro elegante al ícono */
-  transition: filter 0.2s ease, transform 0.2s ease;
-}
-
-.campo input[type="date"]::-webkit-calendar-picker-indicator:hover {
-  filter: invert(0.1); /* Se oscurece al pasar el mouse */
-  transform: scale(1.1); /* Ligero zoom interactivo */
-}
-
-/* ==========================================================================
-   2. NAVBAR / BARRA DE NAVEGACIÓN
+   2. NAVEGACIÓN Y BARRA SUPERIOR
    ========================================================================== */
 .navbar {
   background-color: var(--bg-card);
@@ -132,6 +91,7 @@ body {
   justify-content: space-between;
   box-shadow: var(--shadow-sm);
   margin-bottom: 2rem;
+  border-radius: var(--radius-md);
 }
 
 .navbar__brand {
@@ -157,14 +117,7 @@ body {
   display: flex;
   align-items: center;
   list-style: none;
-  margin: 0;
-  padding: 0;
   gap: 1.5rem;
-}
-
-.navbar__menu li {
-  display: inline-flex;
-  align-items: center;
 }
 
 .navbar__link {
@@ -177,13 +130,9 @@ body {
   position: relative;
 }
 
-.navbar__link:hover {
-  color: var(--primary);
-}
-
+.navbar__link:hover,
 .navbar__link--active {
   color: var(--primary);
-  font-weight: 600;
 }
 
 .navbar__link--active::after {
@@ -197,9 +146,7 @@ body {
   border-radius: 2px;
 }
 
-/* ==========================================================================
-   3. BARRA SUPERIOR (HEADER, TOOLBAR Y TABS DE ESTADO)
-   ========================================================================== */
+/* Header Acciones & Tabs */
 .header-acciones {
   display: flex;
   align-items: center;
@@ -213,7 +160,6 @@ body {
   color: var(--text-main);
 }
 
-/* Pestañas de Estado (Tabs) */
 .tabs-estado {
   display: flex;
   gap: 0.5rem;
@@ -233,17 +179,19 @@ body {
   transition: var(--transition);
 }
 
-.tab-item:hover {
+.tab-item:hover,
+.tab-item.active {
   color: var(--primary);
 }
 
 .tab-item.active {
-  color: var(--primary);
   border-bottom-color: var(--primary);
   font-weight: 600;
 }
 
-/* Toolbar & Buscador */
+/* ==========================================================================
+   3. TOOLBAR Y BUSCADOR (CORREGIDO Y UNIFICADO)
+   ========================================================================== */
 .toolbar {
   display: flex;
   align-items: center;
@@ -253,7 +201,8 @@ body {
   flex-wrap: wrap;
 }
 
-.toolbar .buscador {
+.toolbar .buscador,
+.buscador {
   position: relative;
   flex: 1;
   max-width: 500px;
@@ -261,10 +210,25 @@ body {
   align-items: center;
 }
 
-.toolbar .buscador input {
+.toolbar .buscador input,
+.buscador__input {
   width: 100%;
-  margin: 0;
-  padding-right: 95px;
+  padding: 0.75rem 1rem;
+  padding-right: 95px; /* Espacio reservado para el indicador 'Buscando...' */
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  font-size: 0.95rem;
+  outline: none;
+  transition: var(--transition);
+}
+
+.toolbar .buscador input:focus,
+.buscador__input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  background-color: #ffffff;
 }
 
 #buscando {
@@ -280,7 +244,7 @@ body {
 }
 
 /* ==========================================================================
-   4. TABLA Y CARD CONTENEDORA
+   4. TABLA Y TARJETAS DE DATOS
    ========================================================================== */
 .tabla-card {
   background: var(--bg-card);
@@ -337,7 +301,6 @@ tbody tr:last-child td {
   font-style: italic;
 }
 
-/* Imágenes de Portada en Tabla (relación 3:4) */
 td img, .tabla img {
   width: 45px;
   height: 60px;
@@ -348,9 +311,7 @@ td img, .tabla img {
   display: block;
 }
 
-/* ==========================================================================
-   5. BADGES Y ESTADOS
-   ========================================================================== */
+/* Badges y Estados */
 .badge, .estado {
   display: inline-flex;
   align-items: center;
@@ -361,20 +322,14 @@ td img, .tabla img {
   text-transform: capitalize;
 }
 
-/* Estado del libro */
-.estado-disponible { background: var(--success-bg); color: var(--success-text); }
+.estado-disponible, .badge-activo { background: var(--success-bg); color: var(--success-text); }
 .estado-prestado { background: var(--warning-bg); color: var(--warning-text); }
 .estado-reservado { background: var(--info-bg); color: var(--info-text); }
-
-/* Badges Activo / Inactivo */
-.badge-activo { background-color: var(--success-bg); color: var(--success-text); }
 .badge-inactivo { background-color: var(--danger-bg); color: var(--danger-text); }
 
 /* ==========================================================================
-   6. BOTONES Y ACCIONES
+   5. BOTONES Y ESTILOS DE ACCIÓN
    ========================================================================== */
-
-/* Regla base para todos los botones */
 button, 
 .btn-editar, 
 .btn-cancelar, 
@@ -397,10 +352,7 @@ button,
   transition: var(--transition);
 }
 
-/* Celda de acciones en la tabla */
-td.acciones {
-  white-space: nowrap;
-}
+td.acciones { white-space: nowrap; }
 
 td.acciones .btn-editar,
 td.acciones .btn-baja,
@@ -411,59 +363,22 @@ td.acciones .btn-alta {
   margin-right: 0.35rem;
 }
 
-td.acciones .btn-baja:last-child,
-td.acciones .btn-alta:last-child {
-  margin-right: 0;
-}
+.btn-guardar { background-color: var(--primary); color: #ffffff; }
+.btn-guardar:hover { background-color: var(--primary-hover); }
 
-/* Variantes de Botones */
-.btn-guardar {
-  background-color: var(--primary);
-  color: #ffffff;
-}
-.btn-guardar:hover {
-  background-color: var(--primary-hover);
-}
+.btn-editar { background-color: #f1f5f9; color: var(--text-main); border: 1px solid var(--border-color); }
+.btn-editar:hover { background-color: #e2e8f0; }
 
-.btn-editar {
-  background-color: #f1f5f9;
-  color: var(--text-main);
-  border: 1px solid var(--border-color);
-}
-.btn-editar:hover {
-  background-color: #e2e8f0;
-}
+.btn-baja { background-color: var(--danger-bg); color: var(--danger-text); }
+.btn-baja:hover { background-color: #fca5a5; }
 
-.btn-baja {
-  background-color: var(--danger-bg);
-  color: var(--danger-text);
-}
-.btn-baja:hover {
-  background-color: #fca5a5;
-}
+.btn-alta { background-color: var(--success-bg); color: var(--success-text); }
+.btn-alta:hover { background-color: #86efac; }
 
-.btn-alta {
-  background-color: var(--success-bg);
-  color: var(--success-text);
-}
-.btn-alta:hover {
-  background-color: #86efac;
-}
+.btn-cancelar { background-color: transparent; color: var(--text-muted); border: 1px solid var(--border-color); }
+.btn-cancelar:hover { background-color: #f1f5f9; color: var(--text-main); }
 
-.btn-cancelar {
-  background-color: transparent;
-  color: var(--text-muted);
-  border: 1px solid var(--border-color);
-}
-.btn-cancelar:hover {
-  background-color: #f1f5f9;
-  color: var(--text-main);
-}
-
-/* Botón "Nuevo" (+ Nuevo libro) */
-.btn-nuevo,
-a.btn-nuevo,
-.toolbar .btn-nuevo {
+.btn-nuevo, a.btn-nuevo {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -472,39 +387,21 @@ a.btn-nuevo,
   color: #ffffff !important;
   font-size: 0.875rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
   padding: 0.65rem 1.25rem;
   height: 42px;
   border-radius: var(--radius-sm);
   text-decoration: none !important;
-  white-space: nowrap;
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0.05) 100%);
-  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.25), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.25);
   transition: var(--transition);
-  box-sizing: border-box;
 }
 
-.btn-nuevo:visited,
-a.btn-nuevo:visited {
-  color: #ffffff !important;
-}
-
-.btn-nuevo:hover,
-a.btn-nuevo:hover {
+.btn-nuevo:hover {
   background-color: var(--primary-hover);
-  color: #ffffff !important;
   transform: translateY(-2px);
-  box-shadow: 0 8px 15px -3px rgba(79, 70, 229, 0.35), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.btn-nuevo:active,
-a.btn-nuevo:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px -1px rgba(79, 70, 229, 0.2);
 }
 
 /* ==========================================================================
-   7. FORMULARIOS Y GRID LAYOUT
+   6. FORMULARIOS Y ELEMENTOS ACCESIBLES
    ========================================================================== */
 .form-card {
   background: var(--bg-card);
@@ -531,14 +428,8 @@ a.btn-nuevo:active {
 }
 
 @media (min-width: 640px) {
-  .form-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .campo:has(#titulo),
-  .campo:first-child {
-    grid-column: span 2;
-  }
+  .form-grid { grid-template-columns: repeat(2, 1fr); }
+  .campo-full { grid-column: 1 / -1; }
 }
 
 .campo {
@@ -547,33 +438,69 @@ a.btn-nuevo:active {
   gap: 0.4rem;
 }
 
-.campo label {
+.campo label,
+.label-legend {
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-main);
 }
 
-input[type="text"],
-input[type="number"],
-input[type="file"],
-select {
+.requerido {
+  color: var(--danger-text);
+  font-weight: bold;
+}
+
+.campo input[type="text"],
+.campo input[type="number"],
+.campo input[type="date"],
+.campo select,
+.campo textarea {
   width: 100%;
-  padding: 0.65rem 0.85rem;
+  padding: 0.75rem 1rem;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   background-color: var(--bg-main);
-  color: var(--text-main);
   font-size: 0.95rem;
-  outline: none;
+  color: var(--text-main);
   transition: var(--transition);
 }
 
-input[type="text"]:focus,
-input[type="number"]:focus,
-select:focus {
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus {
+  outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
   background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.campo textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.texto-ayuda {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Fieldset para Selector de Estado */
+.campo-fieldset {
+  border: none;
+  padding: 0;
+  margin-top: 1rem;
+}
+
+.estado-selector {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.4rem;
+}
+
+.estado-selector label {
+  font-weight: 400;
+  cursor: pointer;
 }
 
 .preview-portada {
@@ -588,9 +515,7 @@ select:focus {
   width: 120px;
   height: 160px;
   object-fit: cover;
-  object-position: center;
   border-radius: var(--radius-sm);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   border: 1px solid var(--border-color);
 }
 
@@ -602,15 +527,14 @@ select:focus {
 }
 
 /* ==========================================================================
-   8. PAGINACIÓN
+   7. PAGINACIÓN, ALERTAS Y FOOTER
    ========================================================================== */
 .paginacion {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 0.4rem;
-  margin-top: 1.5rem;
-  margin-bottom: 1.5rem;
+  margin: 1.5rem 0;
 }
 
 .pagina-btn {
@@ -625,27 +549,103 @@ select:focus {
   color: var(--text-muted);
   border: 1px solid var(--border-color);
   font-size: 0.875rem;
-  font-weight: 500;
   text-decoration: none;
   transition: var(--transition);
 }
 
-.pagina-btn:hover {
-  background-color: var(--bg-main);
-  border-color: #cbd5e1;
-  color: var(--text-main);
-}
-
+.pagina-btn:hover { background-color: var(--bg-main); color: var(--text-main); }
 .pagina-btn.activa {
   background-color: var(--primary);
   color: #ffffff;
   border-color: var(--primary);
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
 }
 
 /* ==========================================================================
-   9. FOOTER
+   ALERTAS FLOTANTES Y CENTRADAS (TOASTS EN PANTALLA)
+   ========================================================================== */
+.alertas-contenedor,
+.contenedor-alertas {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 90%;
+  max-width: 480px;
+  pointer-events: none; /* Permite interactuar con la pantalla por detrás */
+}
+
+.alerta {
+  pointer-events: auto; /* Reactiva interacción directamente sobre la alerta */
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 600;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(8px);
+  
+  /* Layout Flex para alinear el texto y la 'X' de cierre */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+
+  /* Animación de entrada */
+  animation: deslizarEntrada 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Animación de entrada suave */
+@keyframes deslizarEntrada {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Variantes de Color */
+.alerta-exito {
+  background-color: rgba(220, 252, 231, 0.95);
+  color: var(--success-text);
+  border: 1px solid #86efac;
+}
+
+.alerta-error {
+  background-color: rgba(254, 226, 226, 0.95);
+  color: var(--danger-text);
+  border: 1px solid #fca5a5;
+}
+
+/* Botón de cierre (X) para alertas que no desvanecen solas */
+.btn-cerrar-alerta {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  font-weight: bold;
+  line-height: 1;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+  padding: 0 0.25rem;
+  transition: opacity 0.2s ease;
+  flex-shrink: 0; /* Impide que la 'X' se deforme si el texto es largo */
+}
+
+.btn-cerrar-alerta:hover {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   8. FOOTER
    ========================================================================== */
 .footer {
   text-align: center;
@@ -654,43 +654,4 @@ select:focus {
   font-size: 0.85rem;
   border-top: 1px solid var(--border-color);
   margin-top: 4rem;
-}
-
-.footer__text {
-  margin: 0;
-}
-
-/* ==========================================================================
-   ALERTAS Y NOTIFICACIONES
-   ========================================================================== */
-.alertas-contenedor {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.alerta {
-  padding: 0.85rem 1.25rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  box-shadow: var(--shadow-sm);
-  margin-bottom: 1rem;
-}
-
-/* Alerta de Éxito (Verde) */
-.alerta-exito {
-  background-color: var(--success-bg);
-  color: var(--success-text);
-  border: 1px solid #bbf7d0;
-}
-
-/* Alerta de Error (Rojo) */
-.alerta-error {
-  background-color: var(--danger-bg);
-  color: var(--danger-text);
-  border: 1px solid #fecaca;
 }

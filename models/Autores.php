@@ -74,65 +74,78 @@ class Autores extends ActiveRecord
     }
 
     /**
-     * Lista autores con opción de búsqueda y paginación.
-     */
-    public static function listar(
-        string $busqueda = '',
-        int $pagina = 1,
-        int $porPagina = 10,
-        string|int $activo = '1' // '1', '0' o 'todos'
-    ): array {
+ * Cuenta el total de autores según filtros para calcular las páginas.
+ */
+public static function total(string $busqueda = '', string|int $activo = '1'): int 
+{
+    $sql = "SELECT COUNT(*) FROM autores WHERE 1=1";
 
-        $offset = ($pagina - 1) * $porPagina;
-
-        $sql = "SELECT 
-                    autores.*
-                FROM autores
-                WHERE autores.activo = 1
-        ";
-
-        if ($busqueda !== '') {
-            $sql .= "
-                AND (
-                    autores.nombre LIKE :busqueda
-                    OR autores.apellido LIKE :busqueda
-                    OR autores.nacionalidad LIKE :busqueda
-                )
-            ";
-        }
-
-        $sql .= "
-            ORDER BY autores.id DESC
-            LIMIT :limite OFFSET :offset
-        ";
-
-        $stmt = self::$db->prepare($sql);
-
-        if ($busqueda !== '') {
-            $stmt->bindValue(
-                ':busqueda',
-                '%' . trim($busqueda) . '%'
-            );
-        }
-
-        $stmt->bindValue(
-            ':limite',
-            $porPagina,
-            PDO::PARAM_INT
-        );
-
-        $stmt->bindValue(
-            ':offset',
-            $offset,
-            PDO::PARAM_INT
-        );
-
-        $stmt->execute();
-
-        return static::crearObjetos(
-            $stmt->fetchAll(PDO::FETCH_ASSOC)
-        );
+    if ($activo !== 'todos') {
+        $sql .= " AND autores.activo = :activo";
     }
+
+    if ($busqueda !== '') {
+        $sql .= " AND (nombre LIKE :busqueda OR apellido LIKE :busqueda OR nacionalidad LIKE :busqueda)";
+    }
+
+    $stmt = self::$db->prepare($sql);
+
+    if ($activo !== 'todos') {
+        $stmt->bindValue(':activo', (int)$activo, PDO::PARAM_INT);
+    }
+
+    if ($busqueda !== '') {
+        $stmt->bindValue(':busqueda', '%' . trim($busqueda) . '%');
+    }
+
+    $stmt->execute();
+    return (int) $stmt->fetchColumn();
+}
+
+/**
+ * Lista autores con opción de búsqueda, paginación y filtro de estado.
+ */
+public static function listar(
+    string $busqueda = '',
+    int $pagina = 1,
+    int $porPagina = 10,
+    string|int $activo = '1'
+): array {
+    $offset = ($pagina - 1) * $porPagina;
+
+    $sql = "SELECT autores.* FROM autores WHERE 1=1";
+
+    if ($activo !== 'todos') {
+        $sql .= " AND autores.activo = :activo";
+    }
+
+    if ($busqueda !== '') {
+        $sql .= " AND (
+            autores.nombre LIKE :busqueda
+            OR autores.apellido LIKE :busqueda
+            OR autores.nacionalidad LIKE :busqueda
+        )";
+    }
+
+    $sql .= " ORDER BY autores.id DESC LIMIT :limite OFFSET :offset";
+
+    $stmt = self::$db->prepare($sql);
+
+    if ($activo !== 'todos') {
+        $stmt->bindValue(':activo', (int)$activo, PDO::PARAM_INT);
+    }
+
+    if ($busqueda !== '') {
+        $stmt->bindValue(':busqueda', '%' . trim($busqueda) . '%');
+    }
+
+    $stmt->bindValue(':limite', $porPagina, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+
+    $stmt->execute();
+
+    return static::crearObjetos($stmt->fetchAll(PDO::FETCH_ASSOC));
+}
 
     /**
      * Devuelve el nombre completo del autor.

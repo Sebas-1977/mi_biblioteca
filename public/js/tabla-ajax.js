@@ -1,51 +1,54 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // =========================================================================
-    // 0. NOTIFICACIONES Y ALERTAS (AUTO-DESVANECIMIENTO Y CIERRE)
+    // 1. AUTO-DESVANECER ALERTAS PHP Y LIMPIEZA DE URL (CREAR / EDITAR)
     // =========================================================================
-    const alertas = document.querySelectorAll('.alerta');
+    const alertasEstaticas = document.querySelectorAll('.alerta-exito');
     
-    alertas.forEach(alerta => {
-        // Desvanecer pasados 4 segundos (4000ms)
-        setTimeout(() => {
-            alerta.style.transition = 'opacity 0.5s ease, transform 0.5s ease, margin 0.5s ease';
-            alerta.style.opacity = '0';
-            alerta.style.transform = 'translateY(-10px)';
-
-            setTimeout(() => {
-                alerta.remove();
-            }, 500);
-        }, 4000);
+    alertasEstaticas.forEach(alerta => {
+        setTimeout(() => desvanecerElemento(alerta), 3500);
     });
 
+    // Limpia los parámetros ?exito= o ?error= de la barra de direcciones sin recargar la página.
+    // Esto evita que la alerta vuelva a aparecer si el usuario presiona F5 / Refrescar.
+    if (window.history.replaceState && (window.location.search.includes('exito=') || window.location.search.includes('error='))) {
+        const urlLimpia = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({ path: urlLimpia }, '', urlLimpia);
+    }
+
     // =========================================================================
-    // 1. CAPTURA DE ELEMENTOS GENERALES
+    // 2. CAPTURA Y VALIDACIÓN DE ELEMENTOS DE TABLA
     // =========================================================================
-    const buscador = document.getElementById('buscador') || document.querySelector('.buscador input');
     const contenedorTabla = document.getElementById('contenedor-tabla') || document.querySelector('[data-modulo]');
+    
+    // Si no estamos en una vista de listado/tabla, cortamos la ejecución
+    if (!contenedorTabla) return;
+
+    // Selector flexible para el buscador (compatible con ID o clase BEM)
+    const buscador = document.getElementById('buscador') || 
+                     document.querySelector('.buscador input') || 
+                     document.querySelector('.buscador__input');
+                     
     const indicador = document.getElementById('buscando');
     const tabs = document.querySelectorAll('.tab-item');
 
-    // Si no hay tabla en esta pantalla, no ejecutamos el resto del script de tablas
-    if (!contenedorTabla) return;
-
-    // Obtenemos el nombre del módulo automáticamente (ej: "autores", "generos", "libros")
     const modulo = contenedorTabla.dataset.modulo; 
     let timeout = null;
 
-    // Detectar el estado inicial desde la pestaña activa del HTML (por defecto '1')
+    // Obtener estado activo inicial
     const tabActivaInicial = document.querySelector('.tab-item.active');
     let estadoActual = tabActivaInicial ? (tabActivaInicial.dataset.estado || '1') : '1';
 
     // =========================================================================
-    // 2. FUNCIÓN DE CARGA / BÚSQUEDA GENÉRICA (AJAX)
+    // 3. PETICIÓN AJAX PARA TABLAS (BÚSQUEDA Y PAGINACIÓN)
     // =========================================================================
     async function cargarTabla(pagina = 1) {
         const query = buscador ? buscador.value.trim() : '';
+        
         if (indicador) indicador.style.display = 'inline';
+        contenedorTabla.setAttribute('aria-busy', 'true');
 
         try {
-            // Se incluyen todos los parámetros en la URL (búsqueda, página y estado)
             const url = `/${modulo}?ajax=1&busqueda=${encodeURIComponent(query)}&pagina=${pagina}&estado=${estadoActual}`;
 
             const respuesta = await fetch(url, {
@@ -59,13 +62,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error(`Error al cargar la tabla de ${modulo}:`, error);
+            mostrarAlerta('No se pudo actualizar el listado.', 'error');
         } finally {
             if (indicador) indicador.style.display = 'none';
+            contenedorTabla.removeAttribute('aria-busy');
         }
     }
 
     // =========================================================================
-    // 3. EVENTO DE BÚSQUEDA (DEBOUNCE 350ms)
+    // 4. LISTENERS BÚSQUEDA Y TABS
     // =========================================================================
     if (buscador) {
         buscador.addEventListener('input', () => {
@@ -74,19 +79,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // =========================================================================
-    // 4. EVENTO DE PESTAÑAS / TABS (FILTRO POR ESTADO)
-    // =========================================================================
     if (tabs.length > 0) {
         tabs.forEach(tab => {
             tab.addEventListener('click', (e) => {
                 const tabClickeada = e.currentTarget;
 
-                // Cambiar la clase activa
                 tabs.forEach(t => t.classList.remove('active'));
                 tabClickeada.classList.add('active');
 
-                // Actualizar estado global y recargar la tabla desde la página 1
                 estadoActual = tabClickeada.dataset.estado || '1';
                 cargarTabla(1);
             });
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================================
     contenedorTabla.addEventListener('click', async (e) => {
 
-        // A) ACCIÓN: PAGINACIÓN
+        // A) Paginación
         const linkPagina = e.target.closest('.pagina-btn, .pagination a, .paginacion a');
         if (linkPagina) {
             e.preventDefault();
@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // B) ACCIONES: DAR DE BAJA / DAR DE ALTA
+        // B) Alta / Baja AJAX
         const btnBaja = e.target.closest('.btn-baja');
         const btnAlta = e.target.closest('.btn-alta');
 
@@ -132,7 +132,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const formData = new FormData();
                 formData.append('id', id);
 
-                // Endpoint dinámico POST: /libros/alta o /libros/baja
                 const respuesta = await fetch(`/${modulo}/${accion}`, {
                     method: 'POST',
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -142,22 +141,77 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await respuesta.json();
 
                 if (data.ok || data.success) {
-                    // Si estamos en la pestaña "Todos", recargamos la tabla para refrescar badges y botones
+                    mostrarAlerta(data.mensaje || `Registro procesado correctamente.`, 'exito');
+
                     if (estadoActual === 'todos') {
                         cargarTabla();
                     } else if (fila) {
-                        // Si estamos en la pestaña "Activos" o "Inactivos", quitamos la fila del DOM
                         fila.remove();
                     }
                 } else {
-                    alert(data.mensaje || `No se pudo procesar la acción de ${accion}.`);
+                    mostrarAlerta(data.mensaje || `No se pudo procesar la acción de ${accion}.`, 'error');
                 }
 
             } catch (error) {
                 console.error(`Error al ejecutar ${accion} en ${modulo}:`, error);
-                alert('Ocurrió un error en el servidor.');
+                mostrarAlerta('Ocurrió un error al procesar la solicitud.', 'error');
             }
         }
     });
 
-});
+}); // <--- FIN DE DOMContentLoaded
+
+// =========================================================================
+// FUNCIONES GLOBALES (ACCESIBLES DESDE CUALQUIER LUGAR)
+// =========================================================================
+function obtenerOCrearContenedorAlertas() {
+    let contenedor = document.querySelector('.alertas-contenedor') || document.querySelector('.contenedor-alertas');
+    
+    if (!contenedor) {
+        contenedor = document.createElement('DIV');
+        contenedor.className = 'alertas-contenedor';
+        contenedor.setAttribute('aria-live', 'polite');
+        document.body.appendChild(contenedor);
+    }
+    return contenedor;
+}
+
+function mostrarAlerta(mensaje, tipo = 'exito') {
+    const contenedor = obtenerOCrearContenedorAlertas();
+
+    const alerta = document.createElement('DIV');
+    alerta.className = `alerta alerta-${tipo}`;
+    alerta.setAttribute('role', 'alert');
+
+    // Span para el texto del mensaje
+    const texto = document.createElement('SPAN');
+    texto.textContent = mensaje;
+    alerta.appendChild(texto);
+
+    if (tipo === 'error') {
+        // Para alertas de ERROR: Crear el botón de cierre "X" y NO autodesvanecer
+        const btnCerrar = document.createElement('BUTTON');
+        btnCerrar.type = 'button';
+        btnCerrar.className = 'btn-cerrar-alerta';
+        btnCerrar.innerHTML = '&times;';
+        btnCerrar.addEventListener('click', () => desvanecerElemento(alerta));
+        alerta.appendChild(btnCerrar);
+    } else {
+        // Para alertas de ÉXITO: Autodesvanecer tras 3.5 segundos
+        setTimeout(() => desvanecerElemento(alerta), 3500);
+    }
+
+    contenedor.appendChild(alerta);
+}
+
+function desvanecerElemento(elem) {
+    if (!elem) return;
+    
+    elem.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+    elem.style.opacity = '0';
+    elem.style.transform = 'translateY(-15px) scale(0.95)';
+
+    setTimeout(() => {
+        elem.remove();
+    }, 400);
+}

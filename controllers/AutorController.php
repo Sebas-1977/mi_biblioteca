@@ -18,6 +18,12 @@ class AutorController
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
         $estado = $_GET['estado'] ?? '1'; // Capturamos estado igual que en libros
 
+        // 1. Obtener el total de registros filtrados
+        $totalRegistros = Autores::total($busqueda, $estado);
+
+        // 2. Calcular el total de páginas
+        $totalPaginas = (int) ceil($totalRegistros / self::POR_PAGINA);
+
         // Ejecuta la búsqueda paginada desde el modelo
         $autores = Autores::listar($busqueda, $pagina, self::POR_PAGINA, $estado);
 
@@ -26,6 +32,7 @@ class AutorController
             'autores'      => $autores,
             'busqueda'     => $busqueda,
             'pagina'       => $pagina,
+            'totalPaginas' => $totalPaginas,
             'estado'   => $estado
         ];
 
@@ -65,13 +72,13 @@ class AutorController
                         echo json_encode([
                             'exito' => true,
                             'mensaje' => 'Autor creado correctamente',
-                            'redireccion' => '/autores'
+                            'redireccion' => '/autores?exito=1'
                         ]);
                         exit;
                     }
 
                     // RESPUESTA TRADICIONAL
-                    header('Location: /autores');
+                    header('Location: /autores?exito=1');
                     exit;
                 }
             }
@@ -137,12 +144,12 @@ class AutorController
                     echo json_encode([
                         'ok' => true,
                         'mensaje' => 'Autor actualizado correctamente',
-                        'redireccion' => '/autores'
+                        'redireccion' => '/autores?exito=2'
                     ]);
                     exit;
                 }
 
-                header('Location: /autores');
+                header('Location: /autores?exito=2');
                 exit;
             }
 
@@ -212,7 +219,7 @@ class AutorController
         }
 
         // 5. Respuesta para navegación tradicional HTML
-        header('Location: /autores');
+        header('Location: /autores?exito=3');
         exit;
     }
 
@@ -261,7 +268,7 @@ class AutorController
         }
 
         // 5. Respuesta para navegación tradicional HTML
-        header('Location: /autores');
+        header('Location: /autores?exito=4');
         exit;
     }
 

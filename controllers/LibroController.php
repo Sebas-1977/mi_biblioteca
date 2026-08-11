@@ -11,7 +11,7 @@ use MVC\Router;
 
 class LibroController
 {
-    private const POR_PAGINA = 7;
+    private const POR_PAGINA = 5;
     // Ruta absoluta donde se guardarán las imágenes en el servidor
     private const CARPETA_PORTADAS = __DIR__ . '/../public/img/portadas/';
 
@@ -22,6 +22,12 @@ class LibroController
         
         // Capturamos el estado activo ('1', '0' o 'todos'). Por defecto '1'
         $estado = $_GET['estado'] ?? '1';
+
+        // 1. Obtener el total de registros filtrados
+        $totalRegistros = Libros::total($busqueda, $estado);
+
+        // 2. Calcular el total de páginas
+        $totalPaginas = (int) ceil($totalRegistros / self::POR_PAGINA);
 
         $libros = Libros::listar(
             $busqueda,
@@ -35,6 +41,7 @@ class LibroController
             'libros'   => $libros,
             'busqueda' => $busqueda,
             'pagina'   => $pagina,
+            'totalPaginas' => $totalPaginas,
             'estado'   => $estado
         ];
 
@@ -80,13 +87,13 @@ class LibroController
                         echo json_encode([
                             'exito' => true,
                             'mensaje' => 'Libro creado correctamente',
-                            'redireccion' => '/libros'
+                            'redireccion' => '/libros?exito=1'
                         ]);
                         exit;
                     }
 
                     // RESPUESTA TRADICIONAL
-                    header('Location: /libros');
+                    header('Location: /libros?exito=1');
                     exit;
                 }
             }
@@ -180,13 +187,13 @@ class LibroController
                         echo json_encode([
                             'ok' => true,
                             'mensaje' => 'Libro actualizado correctamente',
-                            'redireccion' => '/libros'
+                            'redireccion' => '/libros?exito=2'
                         ]);
                         exit;
                     }
 
                     // Respuesta Éxito Tradicional
-                    header('Location: /libros?exito=1');
+                    header('Location: /libros?exito=2');
                     exit;
                 }
             }
@@ -334,7 +341,7 @@ class LibroController
         }
 
         // 5. Respuesta para navegación tradicional HTML
-        header('Location: /libros');
+        header('Location: /libros?exito=3');
         exit;
     }
 
@@ -383,7 +390,7 @@ class LibroController
         }
 
         // 5. Respuesta para navegación tradicional HTML
-        header('Location: /libros');
+        header('Location: /libros?exito=4');
         exit;
     }
 

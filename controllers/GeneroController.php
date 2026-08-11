@@ -17,17 +17,24 @@ class GeneroController
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
         $estado = $_GET['estado'] ?? '1'; // Capturamos estado igual que en libros
 
+        // 1. Obtener el total de registros filtrados
+        $totalRegistros = Generos::total($busqueda, $estado);
+
+        // 2. Calcular el total de páginas
+        $totalPaginas = (int) ceil($totalRegistros / self::POR_PAGINA);
+        
         // Ejecuta la búsqueda paginada desde el modelo
         $generos = Generos::listar($busqueda, $pagina, self::POR_PAGINA, $estado);
 
         // Ejecuta la búsqueda paginada desde el modelo
-        $resultado = Generos::buscarPaginado($busqueda, $pagina, self::POR_PAGINA);
+        // $resultado = Generos::buscarPaginado($busqueda, $pagina, self::POR_PAGINA);
 
         $datos = [
         'titulo' => 'Géneros',
         'generos' => $generos,
         'busqueda' => $busqueda,
         'pagina' => $pagina,
+        'totalPaginas' => $totalPaginas,
         'estado' => $estado
         ];
 
@@ -66,13 +73,13 @@ class GeneroController
                         echo json_encode([
                             'exito' => true,
                             'mensaje' => 'Género creado correctamente',
-                            'redireccion' => '/generos'
+                            'redireccion' => '/generos?exito=1'
                         ]);
                         exit;
                     }
 
                     // RESPUESTA TRADICIONAL
-                    header('Location: /generos');
+                    header('Location: /generos?exito=1');
                     exit;
                 }
             }
@@ -138,12 +145,12 @@ class GeneroController
                     echo json_encode([
                         'ok' => true,
                         'mensaje' => 'Género actualizado correctamente',
-                        'redireccion' => '/generos'
+                        'redireccion' => '/generos?exito=2'
                     ]);
                     exit;
                 }
 
-                header('Location: /generos');
+                header('Location: /generos?exito=2');
                 exit;
             }
 
@@ -213,7 +220,7 @@ class GeneroController
         }
 
         // 5. Respuesta para navegación tradicional HTML
-        header('Location: /generos');
+        header('Location: /generos?exito=3');
         exit;
     }
 
@@ -262,7 +269,7 @@ class GeneroController
         }
 
         // 5. Respuesta para navegación tradicional HTML
-        header('Location: /generos');
+        header('Location: /generos?exito=4');
         exit;
     }
 

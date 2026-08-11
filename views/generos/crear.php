@@ -2,29 +2,40 @@
 /** @var string $titulo */
 /** @var \Model\Generos $genero */
 /** @var array $errores */
+$errores = $errores ?? [];
+// Si viene una variable $error como string individual, la sumamos al array de errores
+if (!empty($error) && is_string($error)) {
+    $errores[] = $error;
+}
 ?>
 
 <?php if (!empty($errores)): ?>
-    <div class="alertas-contenedor">
-        <?php foreach ($errores as $error): ?>
-            <div class="alerta alerta-error"><?= htmlspecialchars($error) ?></div>
+    <div class="alertas-contenedor" role="alert" aria-live="polite">
+        <?php foreach ($errores as $err): ?>
+            <div class="alerta alerta-error">
+                <span><?= htmlspecialchars($err); ?></span>
+                <button type="button" class="btn-cerrar-alerta" onclick="desvanecerElemento(this.closest('.alerta'))">&times;</button>
+            </div>
         <?php endforeach; ?>
     </div>
 <?php endif; ?>
 
 <div class="form-card">
-    <h2>Crear Género</h2>
+    <h2><?= htmlspecialchars($titulo ?? 'Crear Género') ?></h2>
 
-    <form method="POST" action="/generos/crear">
+    <form method="POST" action="/generos/crear" novalidate>
         <div class="form-grid">
             <div class="campo">
-                <label for="nombre">Nombre</label>
+                <label for="nombre">
+                    Nombre <span class="requerido" aria-hidden="true">*</span>
+                </label>
                 <input
                     type="text"
                     id="nombre"
                     name="nombre"
                     value="<?= htmlspecialchars($genero->nombre ?? '') ?>"
                     required
+                    aria-required="true"
                 >
             </div>
 
@@ -39,8 +50,8 @@
             </div>
         </div>
 
-        <div class="campo">
-            <label>Estado</label>
+        <fieldset class="campo campo-fieldset">
+            <legend class="label-legend">Estado del registro</legend>
             <div class="estado-selector">
                 <input 
                     type="radio" 
@@ -60,7 +71,7 @@
                 >
                 <label for="activo_0">Inactivo</label>
             </div>
-        </div>
+        </fieldset>
 
         <div class="acciones-form">
             <button type="submit" class="btn-guardar">Guardar</button>
