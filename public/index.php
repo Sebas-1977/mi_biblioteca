@@ -10,6 +10,12 @@ use MVC\Router;
 
 $router = new Router();
 
+// Redireccionar la raíz "/" a "/libros"
+$router->get('/', function() {
+    header('Location: /libros');
+    exit;
+});
+
 // ─────────────────────────────────────────
 // LIBROS
 // ─────────────────────────────────────────
