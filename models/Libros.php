@@ -85,8 +85,8 @@ class Libros extends ActiveRecord
     public static function total(string $busqueda = '', string|int $activo = '1'): int 
     {
         $sql = "SELECT COUNT(*) FROM libros
-                LEFT JOIN Autores ON Autores.id = libros.autor_id
-                LEFT JOIN Generos ON Generos.id = libros.genero_id
+                LEFT JOIN autores ON autores.id = libros.autor_id
+                LEFT JOIN generos ON generos.id = libros.genero_id
                 WHERE 1 = 1";
 
         if ($activo !== 'todos') {
@@ -96,9 +96,9 @@ class Libros extends ActiveRecord
         if ($busqueda !== '') {
             $sql .= " AND (
                 libros.titulo LIKE :busqueda
-                OR Autores.nombre LIKE :busqueda
-                OR Autores.apellido LIKE :busqueda
-                OR Generos.nombre LIKE :busqueda
+                OR autores.nombre LIKE :busqueda
+                OR autores.apellido LIKE :busqueda
+                OR generos.nombre LIKE :busqueda
             )";
         }
 
@@ -130,12 +130,12 @@ class Libros extends ActiveRecord
 
         $sql = "SELECT 
                     libros.*,
-                    Autores.nombre AS autor_nombre,
-                    Autores.apellido AS autor_apellido,
-                    Generos.nombre AS genero_nombre
+                    autores.nombre AS autor_nombre,
+                    autores.apellido AS autor_apellido,
+                    generos.nombre AS genero_nombre
                 FROM libros
-                LEFT JOIN Autores ON Autores.id = libros.autor_id
-                LEFT JOIN Generos ON Generos.id = libros.genero_id
+                LEFT JOIN autores ON autores.id = libros.autor_id
+                LEFT JOIN generos ON generos.id = libros.genero_id
                 WHERE 1 = 1 ";
 
         if ($activo !== 'todos') {
@@ -145,9 +145,9 @@ class Libros extends ActiveRecord
         if ($busqueda !== '') {
             $sql .= " AND (
                 libros.titulo LIKE :busqueda
-                OR Autores.nombre LIKE :busqueda
-                OR Autores.apellido LIKE :busqueda
-                OR Generos.nombre LIKE :busqueda
+                OR autores.nombre LIKE :busqueda
+                OR autores.apellido LIKE :busqueda
+                OR generos.nombre LIKE :busqueda
             ) ";
         }
 
