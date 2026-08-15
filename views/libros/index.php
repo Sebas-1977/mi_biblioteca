@@ -1,4 +1,9 @@
 <?php
+// 1. Primero siempre la protección de autenticación
+if (!isset($_SESSION['login']) || !$_SESSION['login']) {
+    header('Location: /login');
+    exit;
+}
 /** 
  * @var string $titulo 
  * @var string $busqueda 

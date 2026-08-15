@@ -1,21 +1,26 @@
 <?php
+// 1. Primero siempre la protección de autenticación
+if (!isset($_SESSION['login']) || !$_SESSION['login']) {
+    header('Location: /login');
+    exit;
+}
 /** @var string $titulo */
 /** @var \Model\Autores $autor */
-/** @var array $errores */
-$errores = $errores ?? [];
-// Si viene una variable $error como string individual, la sumamos al array de errores
-if (!empty($error) && is_string($error)) {
-    $errores[] = $error;
-}
+/** @var array $alertas */
+
+// Inicializamos $alertas si no está definida
+$alertas = $alertas ?? [];
 ?>
 
-<?php if (!empty($errores)): ?>
+<?php if (!empty($alertas)): ?>
     <div class="alertas-contenedor" role="alert" aria-live="polite">
-        <?php foreach ($errores as $err): ?>
-            <div class="alerta alerta-error">
-                <span><?= htmlspecialchars($err); ?></span>
-                <button type="button" class="btn-cerrar-alerta" onclick="desvanecerElemento(this.closest('.alerta'))">&times;</button>
-            </div>
+        <?php foreach ($alertas as $tipo => $mensajes): ?>
+            <?php foreach ($mensajes as $mensaje): ?>
+                <div class="alerta alerta-<?= htmlspecialchars($tipo); ?>">
+                    <span><?= htmlspecialchars($mensaje); ?></span>
+                    <button type="button" class="btn-cerrar-alerta" onclick="desvanecerElemento(this.closest('.alerta'))">&times;</button>
+                </div>
+            <?php endforeach; ?>
         <?php endforeach; ?>
     </div>
 <?php endif; ?>
@@ -35,7 +40,7 @@ if (!empty($error) && is_string($error)) {
                     type="text"
                     id="nombre"
                     name="nombre"
-                    value="<?= htmlspecialchars($autor->nombre) ?>"
+                    value="<?= htmlspecialchars($autor->nombre ?? '') ?>"
                     required
                     aria-required="true"
                 >
@@ -49,7 +54,7 @@ if (!empty($error) && is_string($error)) {
                     type="text"
                     id="apellido"
                     name="apellido"
-                    value="<?= htmlspecialchars($autor->apellido) ?>"
+                    value="<?= htmlspecialchars($autor->apellido ?? '') ?>"
                     required
                     aria-required="true"
                 >
@@ -85,7 +90,7 @@ if (!empty($error) && is_string($error)) {
                     id="activo_1"
                     name="activo"
                     value="1"
-                    <?= $autor->activo ? 'checked' : '' ?>
+                    <?= ($autor->activo ?? 1) ? 'checked' : '' ?>
                 >
                 <label for="activo_1">Activo</label>
 
@@ -94,7 +99,7 @@ if (!empty($error) && is_string($error)) {
                     id="activo_0"
                     name="activo"
                     value="0"
-                    <?= !$autor->activo ? 'checked' : '' ?>
+                    <?= isset($autor->activo) && !$autor->activo ? 'checked' : '' ?>
                 >
                 <label for="activo_0">Inactivo</label>
             </div>

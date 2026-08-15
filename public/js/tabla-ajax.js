@@ -9,22 +9,48 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => desvanecerElemento(alerta), 3500);
     });
 
-    // Limpia los parámetros ?exito= o ?error= de la barra de direcciones sin recargar la página.
-    // Esto evita que la alerta vuelva a aparecer si el usuario presiona F5 / Refrescar.
-    if (window.history.replaceState && (window.location.search.includes('exito=') || window.location.search.includes('error='))) {
-        const urlLimpia = window.location.protocol + "//" + window.location.host + window.location.pathname;
-        window.history.replaceState({ path: urlLimpia }, '', urlLimpia);
+    // Limpia ÚNICAMENTE los parámetros ?exito= o ?error= sin perder otros (ej: ?id=3)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('exito') || urlParams.has('error')) {
+        urlParams.delete('exito');
+        urlParams.delete('error');
+        
+        const nuevaQuery = urlParams.toString() ? `?${urlParams.toString()}` : '';
+        const urlLimpia = window.location.pathname + nuevaQuery + window.location.hash;
+        
+        window.history.replaceState(null, '', urlLimpia);
     }
 
     // =========================================================================
-    // 2. CAPTURA Y VALIDACIÓN DE ELEMENTOS DE TABLA
+    // 2. VALIDACIONES Y COMPORTAMIENTOS DE FORMULARIOS (AÑO LIBRO)
+    // =========================================================================
+    const inputAnio = document.getElementById('anio');
+
+    if (inputAnio) {
+        inputAnio.addEventListener('input', (e) => {
+            const anioActual = new Date().getFullYear();
+            
+            // Recorta a un máximo de 4 caracteres
+            if (e.target.value.length > 4) {
+                e.target.value = e.target.value.slice(0, 4);
+            }
+            
+            // Si el número tipeado supera el año actual, lo ajusta automáticamente
+            if (parseInt(e.target.value, 10) > anioActual) {
+                e.target.value = anioActual.toString();
+            }
+        });
+    }
+
+    // =========================================================================
+    // 3. CAPTURA Y VALIDACIÓN DE ELEMENTOS DE TABLA
     // =========================================================================
     const contenedorTabla = document.getElementById('contenedor-tabla') || document.querySelector('[data-modulo]');
     
-    // Si no estamos en una vista de listado/tabla, cortamos la ejecución
+    // Si no estamos en una vista de listado/tabla, cortamos la ejecución de la lógica de tablas
     if (!contenedorTabla) return;
 
-    // Selector flexible para el buscador (compatible con ID o clase BEM)
+    // Selector flexible para el buscador
     const buscador = document.getElementById('buscador') || 
                      document.querySelector('.buscador input') || 
                      document.querySelector('.buscador__input');
@@ -34,15 +60,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const modulo = contenedorTabla.dataset.modulo; 
     let timeout = null;
+    let paginaActual = 1;
 
     // Obtener estado activo inicial
     const tabActivaInicial = document.querySelector('.tab-item.active');
     let estadoActual = tabActivaInicial ? (tabActivaInicial.dataset.estado || '1') : '1';
 
     // =========================================================================
-    // 3. PETICIÓN AJAX PARA TABLAS (BÚSQUEDA Y PAGINACIÓN)
+    // 4. PETICIÓN AJAX PARA TABLAS (BÚSQUEDA Y PAGINACIÓN)
     // =========================================================================
     async function cargarTabla(pagina = 1) {
+        paginaActual = pagina;
         const query = buscador ? buscador.value.trim() : '';
         
         if (indicador) indicador.style.display = 'inline';
@@ -70,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =========================================================================
-    // 4. LISTENERS BÚSQUEDA Y TABS
+    // 5. LISTENERS BÚSQUEDA Y TABS
     // =========================================================================
     if (buscador) {
         buscador.addEventListener('input', () => {
@@ -94,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =========================================================================
-    // 5. DELEGACIÓN DE EVENTOS (PAGINACIÓN, BAJA Y ALTA)
+    // 6. DELEGACIÓN DE EVENTOS (PAGINACIÓN, BAJA Y ALTA)
     // =========================================================================
     contenedorTabla.addEventListener('click', async (e) => {
 
@@ -124,7 +152,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 : '¿Estás seguro de que deseas dar de baja este registro?';
 
             const id = btnAccion.dataset.id;
-            const fila = btnAccion.closest('tr');
 
             if (!confirm(mensajeConfirmacion)) return;
 
@@ -142,12 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (data.ok || data.success) {
                     mostrarAlerta(data.mensaje || `Registro procesado correctamente.`, 'exito');
-
-                    if (estadoActual === 'todos') {
-                        cargarTabla();
-                    } else if (fila) {
-                        fila.remove();
-                    }
+                    cargarTabla(paginaActual);
                 } else {
                     mostrarAlerta(data.mensaje || `No se pudo procesar la acción de ${accion}.`, 'error');
                 }
@@ -162,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
 }); // <--- FIN DE DOMContentLoaded
 
 // =========================================================================
-// FUNCIONES GLOBALES (ACCESIBLES DESDE CUALQUIER LUGAR)
+// FUNCIONES GLOBALES
 // =========================================================================
 function obtenerOCrearContenedorAlertas() {
     let contenedor = document.querySelector('.alertas-contenedor') || document.querySelector('.contenedor-alertas');
@@ -183,21 +205,18 @@ function mostrarAlerta(mensaje, tipo = 'exito') {
     alerta.className = `alerta alerta-${tipo}`;
     alerta.setAttribute('role', 'alert');
 
-    // Span para el texto del mensaje
     const texto = document.createElement('SPAN');
     texto.textContent = mensaje;
     alerta.appendChild(texto);
 
-    if (tipo === 'error') {
-        // Para alertas de ERROR: Crear el botón de cierre "X" y NO autodesvanecer
-        const btnCerrar = document.createElement('BUTTON');
-        btnCerrar.type = 'button';
-        btnCerrar.className = 'btn-cerrar-alerta';
-        btnCerrar.innerHTML = '&times;';
-        btnCerrar.addEventListener('click', () => desvanecerElemento(alerta));
-        alerta.appendChild(btnCerrar);
-    } else {
-        // Para alertas de ÉXITO: Autodesvanecer tras 3.5 segundos
+    const btnCerrar = document.createElement('BUTTON');
+    btnCerrar.type = 'button';
+    btnCerrar.className = 'btn-cerrar-alerta';
+    btnCerrar.innerHTML = '&times;';
+    btnCerrar.addEventListener('click', () => desvanecerElemento(alerta));
+    alerta.appendChild(btnCerrar);
+
+    if (tipo !== 'error') {
         setTimeout(() => desvanecerElemento(alerta), 3500);
     }
 

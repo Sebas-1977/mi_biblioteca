@@ -1,26 +1,27 @@
 <?php
+if (!isset($_SESSION['login']) || !$_SESSION['login']) {
+    header('Location: /login');
+    exit;
+}
+
 /** @var string $titulo */
 /** @var \Model\Libros $libro */
 /** @var \Model\Generos[] $generos */
 /** @var \Model\Autores[] $autores */
-/** @var array $errores */
+/** @var array $alertas */
 
-// Aseguramos que $errores sea un array o lo inicializamos
-$errores = $errores ?? [];
-
-// Si viene una variable $error como string individual, la sumamos al array de errores
-if (!empty($error) && is_string($error)) {
-    $errores[] = $error;
-}
+$alertas = $alertas ?? [];
 ?>
 
-<?php if (!empty($errores)): ?>
+<?php if (!empty($alertas)): ?>
     <div class="alertas-contenedor" role="alert" aria-live="polite">
-        <?php foreach ($errores as $err): ?>
-            <div class="alerta alerta-error">
-                <span><?= htmlspecialchars($err); ?></span>
-                <button type="button" class="btn-cerrar-alerta" onclick="desvanecerElemento(this.closest('.alerta'))">&times;</button>
-            </div>
+        <?php foreach ($alertas as $tipo => $mensajes): ?>
+            <?php foreach ($mensajes as $mensaje): ?>
+                <div class="alerta alerta-<?= htmlspecialchars((string) $tipo); ?>">
+                    <span><?= htmlspecialchars((string) $mensaje); ?></span>
+                    <button type="button" class="btn-cerrar-alerta" onclick="desvanecerElemento(this.closest('.alerta'))">&times;</button>
+                </div>
+            <?php endforeach; ?>
         <?php endforeach; ?>
     </div>
 <?php endif; ?>
@@ -44,38 +45,52 @@ if (!empty($error) && is_string($error)) {
                 >
             </div>
 
+            <!-- SELECCIÓN DE AUTOR (CATÁLOGO GLOBAL) -->
             <div class="campo">
                 <label for="autor_id">
                     Autor <span class="requerido" aria-hidden="true">*</span>
                 </label>
-                <select name="autor_id" id="autor_id" required aria-required="true">
-                    <option value="">Seleccionar autor</option>
-                    <?php foreach ($autores as $autor): ?>
-                        <option
-                            value="<?= $autor->id ?>"
-                            <?= ($libro->autor_id ?? '') == $autor->id ? 'selected' : '' ?>
-                        >
-                            <?= htmlspecialchars($autor->nombre . ' ' . $autor->apellido) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+                <?php if (empty($autores)): ?>
+                    <p class="alerta info">
+                        No hay autores registrados. <a href="/autores/crear" class="enlace-crear">Crear un autor</a>
+                    </p>
+                <?php else: ?>
+                    <select name="autor_id" id="autor_id" required aria-required="true">
+                        <option value="">Seleccionar autor</option>
+                        <?php foreach ($autores as $autor): ?>
+                            <option
+                                value="<?= htmlspecialchars((string) $autor->id) ?>"
+                                <?= (string) ($libro->autor_id ?? '') === (string) $autor->id ? 'selected' : '' ?>
+                            >
+                                <?= htmlspecialchars(trim(($autor->nombre ?? '') . ' ' . ($autor->apellido ?? ''))) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php endif; ?>
             </div>
 
+            <!-- SELECCIÓN DE GÉNERO -->
             <div class="campo">
                 <label for="genero_id">
                     Género <span class="requerido" aria-hidden="true">*</span>
                 </label>
-                <select name="genero_id" id="genero_id" required aria-required="true">
-                    <option value="">Seleccionar género</option>
-                    <?php foreach ($generos as $genero): ?>
-                        <option
-                            value="<?= $genero->id ?>"
-                            <?= ($libro->genero_id ?? '') == $genero->id ? 'selected' : '' ?>
-                        >
-                            <?= htmlspecialchars($genero->nombre) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+                <?php if (empty($generos)): ?>
+                    <p class="alerta info">
+                        Aún no tienes géneros. <a href="/generos/crear" class="enlace-crear">Crear primer género</a>
+                    </p>
+                <?php else: ?>
+                    <select name="genero_id" id="genero_id" required aria-required="true">
+                        <option value="">Seleccionar género</option>
+                        <?php foreach ($generos as $genero): ?>
+                            <option
+                                value="<?= htmlspecialchars((string) $genero->id) ?>"
+                                <?= (string) ($libro->genero_id ?? '') === (string) $genero->id ? 'selected' : '' ?>
+                            >
+                                <?= htmlspecialchars($genero->nombre ?? '') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php endif; ?>
             </div>
 
             <div class="campo">
@@ -84,9 +99,10 @@ if (!empty($error) && is_string($error)) {
                     type="number"
                     id="anio"
                     name="anio"
-                    min="1000"
+                    min="0"
                     max="<?= date('Y') ?>"
-                    value="<?= htmlspecialchars($libro->anio ?? '') ?>"
+                    value="<?= htmlspecialchars((string) ($libro->anio ?? '')) ?>"
+                    placeholder="Ej: 1967"
                 >
             </div>
 
@@ -97,7 +113,7 @@ if (!empty($error) && is_string($error)) {
                     id="paginas"
                     name="paginas"
                     min="1"
-                    value="<?= htmlspecialchars($libro->paginas ?? '') ?>"
+                    value="<?= htmlspecialchars((string) ($libro->paginas ?? '')) ?>"
                 >
             </div>
 
@@ -131,7 +147,7 @@ if (!empty($error) && is_string($error)) {
                     id="activo_1" 
                     name="activo" 
                     value="1" 
-                    <?= ($libro->activo ?? 1) ? 'checked' : '' ?>
+                    <?= (int) ($libro->activo ?? 1) === 1 ? 'checked' : '' ?>
                 >
                 <label for="activo_1">Activo</label>
 
@@ -140,7 +156,7 @@ if (!empty($error) && is_string($error)) {
                     id="activo_0" 
                     name="activo" 
                     value="0" 
-                    <?= isset($libro->activo) && !$libro->activo ? 'checked' : '' ?>
+                    <?= isset($libro->activo) && (int) $libro->activo === 0 ? 'checked' : '' ?>
                 >
                 <label for="activo_0">Inactivo</label>
             </div>

@@ -25,25 +25,27 @@ class Generos extends ActiveRecord
 
     public function __construct(array $args = [])
     {
-        $this->id = $args['id'] ?? null;
-        $this->nombre = $args['nombre'] ?? '';
-        $this->descripcion = $args['descripcion'] ?? null;
-        $this->activo = $args['activo'] ?? 1;
+        $this->id = isset($args['id']) && $args['id'] !== '' ? (int) $args['id'] : null;
+        $this->nombre = trim($args['nombre'] ?? '');
+        $this->descripcion = isset($args['descripcion']) && trim($args['descripcion']) !== '' 
+            ? trim($args['descripcion']) 
+            : null;
+        $this->activo = isset($args['activo']) ? (int) $args['activo'] : 1;
     }
 
     public function validar(): array
     {
-        static::$errores = [];
+        static::$alertas = [];
 
         if (trim($this->nombre) === '') {
-            static::$errores[] = 'El nombre del género es obligatorio';
+            self::setAlerta('error', 'El nombre del género es obligatorio');
         }
 
-        return static::$errores;
+        return static::$alertas;
     }
 
     /**
-     * Cuenta el total de géneros según filtros para la paginación.
+     * Cuenta el total de géneros registrados en el catálogo global según filtros.
      */
     public static function total(string $busqueda = '', string|int $activo = '1'): int 
     {
@@ -72,13 +74,13 @@ class Generos extends ActiveRecord
     }
 
     /**
-     * Lista géneros con opción de búsqueda, paginación y filtro de estado.
+     * Lista géneros del catálogo global con opción de búsqueda, paginación y filtro de estado.
      */
     public static function listar(
         string $busqueda = '',
         int $pagina = 1,
         int $porPagina = 10,
-        string|int $activo = '1' // '1', '0' o 'todos'
+        string|int $activo = '1'
     ): array {
         $offset = ($pagina - 1) * $porPagina;
 

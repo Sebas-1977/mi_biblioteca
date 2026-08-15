@@ -6,6 +6,7 @@ namespace Controllers;
 
 use Model\Generos;
 use MVC\Router;
+use Classes\Auth;
 
 class GeneroController
 {
@@ -13,38 +14,31 @@ class GeneroController
 
     public static function index(Router $router): void
     {
+        Auth::isAuth();
+
         $busqueda = trim($_GET['q'] ?? $_GET['busqueda'] ?? '');
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
-        $estado = $_GET['estado'] ?? '1'; // Capturamos estado igual que en libros
+        $estado = $_GET['estado'] ?? '1';
 
-        // 1. Obtener el total de registros filtrados
+        // Consultas al catálogo global (se removió $usuarioId)
         $totalRegistros = Generos::total($busqueda, $estado);
-
-        // 2. Calcular el total de páginas
         $totalPaginas = (int) ceil($totalRegistros / self::POR_PAGINA);
         
-        // Ejecuta la búsqueda paginada desde el modelo
         $generos = Generos::listar($busqueda, $pagina, self::POR_PAGINA, $estado);
 
-        // Ejecuta la búsqueda paginada desde el modelo
-        // $resultado = Generos::buscarPaginado($busqueda, $pagina, self::POR_PAGINA);
-
         $datos = [
-        'titulo' => 'Géneros',
-        'generos' => $generos,
-        'busqueda' => $busqueda,
-        'pagina' => $pagina,
-        'totalPaginas' => $totalPaginas,
-        'estado' => $estado
+            'titulo'       => 'Géneros',
+            'generos'      => $generos,
+            'busqueda'     => $busqueda,
+            'pagina'       => $pagina,
+            'totalPaginas' => $totalPaginas,
+            'estado'       => $estado
         ];
 
-        // Petición AJAX: devuelve solo el fragmento de la tabla
-        $esAjax = isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
-
-        if ($esAjax) {
+        if (self::esAjax()) {
             extract($datos);
-            include __DIR__ . '/../views/generos/_tabla.php';
-            exit;
+            require __DIR__ . '/../views/generos/_tabla.php';
+            return;
         }
 
         $router->render('generos/index', $datos);
@@ -52,253 +46,250 @@ class GeneroController
 
     public static function crear(Router $router): void
     {
-        $genero = new Generos();
-        $errores = [];
+        Auth::isAuth();
 
-        // Detectamos si la petición es AJAX
-        $esAjax = isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
+        $genero = new Generos();
+        $alertas = [];
+        $esAjax = self::esAjax();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $datosPost = self::obtenerDatosPost();
+            $genero->sincronizar($datosPost);
+            
+            // Se eliminó la asignación de $genero->usuario_id
+            $alertas = $genero->validar();
 
-            $genero->sincronizar($_POST);
-            $errores = $genero->validar();
-
-            if (empty($errores)) {
+            if (empty($alertas)) {
                 $resultado = $genero->guardar();
 
                 if ($resultado) {
-                    // RESPUESTA EXITOSA PARA AJAX
                     if ($esAjax) {
-                        header('Content-Type: application/json');
-                        echo json_encode([
-                            'exito' => true,
-                            'mensaje' => 'Género creado correctamente',
+                        self::jsonResponse([
+                            'exito'       => true,
+                            'ok'          => true,
+                            'mensaje'     => 'Género creado correctamente',
                             'redireccion' => '/generos?exito=1'
-                        ]);
-                        exit;
+                        ], 200);
                     }
 
-                    // RESPUESTA TRADICIONAL
                     header('Location: /generos?exito=1');
                     exit;
                 }
             }
 
-            // RESPUESTA DE ERRORES PARA AJAX
             if ($esAjax) {
-                header('Content-Type: application/json');
-                http_response_code(422); // Código 422: Unprocessable Entity
-                echo json_encode([
-                    'exito' => false,
-                    'errores' => $errores
-                ]);
-                exit;
+                self::jsonResponse([
+                    'exito'   => false,
+                    'ok'      => false,
+                    'alertas' => $alertas,
+                    'errores' => $alertas
+                ], 422);
             }
         }
 
-        // Carga de la vista normal (GET o fallback)
         $router->render('generos/crear', [
             'titulo'  => 'Nuevo Género',
-            'genero'   => $genero,
-            'errores' => $errores
+            'genero'  => $genero,
+            'alertas' => $alertas,
+            'errores' => $alertas
         ]);
     }
 
-   public static function editar(Router $router): void
+    public static function editar(Router $router): void
     {
-        $id = (int) ($_GET['id'] ?? $_POST['id'] ?? 0);
+        Auth::isAuth();
+
+        $datosPost = $_SERVER['REQUEST_METHOD'] === 'POST' ? self::obtenerDatosPost() : [];
+        $id = (int) ($_GET['id'] ?? $datosPost['id'] ?? 0);
+
         $genero = Generos::find($id);
-        $errores = [];
+        $alertas = [];
+        $esAjax = self::esAjax();
 
-        // Detectamos si la petición proviene de AJAX
-        $esAjax = isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
-
-        // 1. Si el registro no existe
         if (!$genero) {
             if ($esAjax) {
-                header('Content-Type: application/json');
-                http_response_code(404);
-                echo json_encode([
-                    'ok' => false,
+                self::jsonResponse([
+                    'exito'   => false,
+                    'ok'      => false,
                     'mensaje' => 'Género no encontrado'
-                ]);
-                exit;
+                ], 404);
             }
 
-            // Si es navegación tradicional, redirigimos
             header('Location: /generos');
             exit;
         }
 
-        // 2. Procesamiento del Formulario (POST)
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $genero->sincronizar($datosPost);
+            $alertas = $genero->validar();
 
-            $genero->sincronizar($_POST);
-            $errores = $genero->validar();
+            if (empty($alertas)) {
+                $resultado = $genero->guardar();
 
-            if (empty($errores)) {
-                $genero->guardar();
+                if ($resultado) {
+                    if ($esAjax) {
+                        self::jsonResponse([
+                            'exito'       => true,
+                            'ok'          => true,
+                            'mensaje'     => 'Género actualizado correctamente',
+                            'redireccion' => '/generos?exito=2'
+                        ], 200);
+                    }
 
-                // Respuesta Éxito
-                if ($esAjax) {
-                    header('Content-Type: application/json');
-                    echo json_encode([
-                        'ok' => true,
-                        'mensaje' => 'Género actualizado correctamente',
-                        'redireccion' => '/generos?exito=2'
-                    ]);
+                    header('Location: /generos?exito=2');
                     exit;
                 }
-
-                header('Location: /generos?exito=2');
-                exit;
             }
 
-            // Respuesta Errores de Validación
             if ($esAjax) {
-                header('Content-Type: application/json');
-                http_response_code(422); // Unprocessable Entity
-                echo json_encode([
-                    'ok' => false,
-                    'errores' => $errores
-                ]);
-                exit;
+                self::jsonResponse([
+                    'exito'   => false,
+                    'ok'      => false,
+                    'alertas' => $alertas,
+                    'errores' => $alertas
+                ], 422);
             }
         }
 
-        // 3. Renderizado de la Vista (Navegación normal GET)
         $router->render('generos/editar', [
             'titulo'  => 'Editar Género',
             'genero'  => $genero,
-            'errores' => $errores
+            'alertas' => $alertas,
+            'errores' => $alertas
         ]);
     }
 
-    /** Da de baja un género por ID (Soporta AJAX y Formularios Tradicionales) */
     public static function baja(): void
     {
-        // 1. Seguridad: Solo permitimos peticiones POST para dar de baja
+        Auth::isAuth();
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: /generos');
             exit;
         }
 
-        $id = (int) ($_POST['id'] ?? 0);
+        $datosPost = self::obtenerDatosPost();
+        $id = (int) ($datosPost['id'] ?? 0);
         $genero = Generos::find($id);
+        $esAjax = self::esAjax();
 
-        // Detectamos si la petición proviene de AJAX
-        $esAjax = isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
-
-        // 2. Si el registro no existe
         if (!$genero) {
             if ($esAjax) {
-                header('Content-Type: application/json');
-                http_response_code(404);
-                echo json_encode([
-                    'ok' => false,
+                self::jsonResponse([
+                    'exito'   => false,
+                    'ok'      => false,
                     'mensaje' => 'El género no existe o ya fue eliminado'
-                ]);
-                exit;
+                ], 404);
             }
 
             header('Location: /generos');
             exit;
         }
 
-        // 3. Ejecutamos la baja (Soft Delete o cambio de estado)
         $resultado = $genero->baja();
 
-        // 4. Respuesta para AJAX
         if ($esAjax) {
-            header('Content-Type: application/json');
-            http_response_code($resultado ? 200 : 500);
-            echo json_encode([
-                'ok' => (bool) $resultado,
+            self::jsonResponse([
+                'exito'   => (bool) $resultado,
+                'ok'      => (bool) $resultado,
                 'mensaje' => $resultado ? 'Género dado de baja correctamente' : 'No se pudo realizar la baja'
-            ]);
-            exit;
+            ], $resultado ? 200 : 500);
         }
 
-        // 5. Respuesta para navegación tradicional HTML
         header('Location: /generos?exito=3');
         exit;
     }
 
     public static function alta(): void
     {
-        // 1. Seguridad: Solo permitimos POST
+        Auth::isAuth();
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: /generos');
             exit;
         }
 
-        $id = (int) ($_POST['id'] ?? 0);
+        $datosPost = self::obtenerDatosPost();
+        $id = (int) ($datosPost['id'] ?? 0);
         $genero = Generos::find($id);
+        $esAjax = self::esAjax();
 
-        // Detectamos si la petición proviene de AJAX
-        $esAjax = isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
-
-        // 2. Si el registro no existe
         if (!$genero) {
             if ($esAjax) {
-                header('Content-Type: application/json');
-                http_response_code(404);
-                echo json_encode([
-                    'ok' => false,
+                self::jsonResponse([
+                    'exito'   => false,
+                    'ok'      => false,
                     'mensaje' => 'El género no existe o fue eliminado'
-                ]);
-                exit;
+                ], 404);
             }
 
             header('Location: /generos');
             exit;
         }
 
-        // 3. Ejecutamos el alta
         $resultado = $genero->alta();
 
-        // 4. Respuesta para AJAX
         if ($esAjax) {
-            header('Content-Type: application/json');
-            http_response_code($resultado ? 200 : 500);
-            echo json_encode([
-                'ok' => (bool) $resultado,
+            self::jsonResponse([
+                'exito'   => (bool) $resultado,
+                'ok'      => (bool) $resultado,
                 'mensaje' => $resultado ? 'Género activado correctamente' : 'No se pudo activar el género'
-            ]);
-            exit;
+            ], $resultado ? 200 : 500);
         }
 
-        // 5. Respuesta para navegación tradicional HTML
         header('Location: /generos?exito=4');
         exit;
     }
 
-    /**
-     * Muestra el listado de géneros inactivos
-     */
     public static function bajas(Router $router): void
     {
+        Auth::isAuth();
+
         $busqueda = trim($_GET['q'] ?? $_GET['busqueda'] ?? '');
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
 
-        // Si tu método de búsqueda o all() permite filtrar por inactivos (por ej. $activo = 0 o false)
-        $generos = Generos::all(false); 
+        $totalRegistros = Generos::total($busqueda, '0');
+        $totalPaginas = (int) ceil($totalRegistros / self::POR_PAGINA);
+
+        $generos = Generos::listar($busqueda, $pagina, self::POR_PAGINA, '0');
 
         $datos = [
-            'titulo'   => 'Géneros Inactivos',
-            'generos'  => $generos,
-            'busqueda' => $busqueda
+            'titulo'       => 'Géneros Inactivos',
+            'generos'      => $generos,
+            'busqueda'     => $busqueda,
+            'pagina'       => $pagina,
+            'totalPaginas' => $totalPaginas
         ];
 
-        // Detección de petición AJAX
-        $esAjax = isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
-
-        if ($esAjax) {
+        if (self::esAjax()) {
             extract($datos);
-            require __DIR__ . '/../views/generos/_tabla_bajas.php'; // o _tabla.php según tu estructura
+            require __DIR__ . '/../views/generos/_tabla_bajas.php';
             return;
         }
 
         $router->render('generos/bajas', $datos);
+    }
+
+    // --- MÉTODOS AUXILIARES ---
+
+    private static function jsonResponse(array $data, int $statusCode = 200): void
+    {
+        header('Content-Type: application/json');
+        http_response_code($statusCode);
+        echo json_encode($data);
+        exit;
+    }
+
+    private static function obtenerDatosPost(): array
+    {
+        $input = json_decode(file_get_contents('php://input'), true);
+        return is_array($input) ? array_merge($_POST, $input) : $_POST;
+    }
+
+    private static function esAjax(): bool
+    {
+        return isset($_GET['ajax']) 
+            || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest')
+            || str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');
     }
 }

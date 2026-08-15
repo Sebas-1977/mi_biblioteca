@@ -6,25 +6,28 @@ namespace Controllers;
 
 use MVC\Router;
 use Model\Autores;
+use Classes\Auth;
 
 class AutorController
 {
     private const POR_PAGINA = 7;
 
-    /** Lista los autores, con búsqueda y paginación */
+    /** Lista los autores del catálogo global, con búsqueda y paginación */
     public static function index(Router $router): void
     {
+        Auth::isAuth();
+
         $busqueda = trim($_GET['q'] ?? $_GET['busqueda'] ?? '');
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
-        $estado = $_GET['estado'] ?? '1'; // Capturamos estado igual que en libros
+        $estado = $_GET['estado'] ?? '1';
 
-        // 1. Obtener el total de registros filtrados
+        // 1. Obtener el total de registros del catálogo global
         $totalRegistros = Autores::total($busqueda, $estado);
 
         // 2. Calcular el total de páginas
         $totalPaginas = (int) ceil($totalRegistros / self::POR_PAGINA);
 
-        // Ejecuta la búsqueda paginada desde el modelo
+        // 3. Obtener la lista de autores
         $autores = Autores::listar($busqueda, $pagina, self::POR_PAGINA, $estado);
 
         $datos = [
@@ -33,16 +36,13 @@ class AutorController
             'busqueda'     => $busqueda,
             'pagina'       => $pagina,
             'totalPaginas' => $totalPaginas,
-            'estado'   => $estado
+            'estado'       => $estado
         ];
 
-        // Petición AJAX: devuelve solo el fragmento de la tabla
-        $esAjax = isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
-
-        if ($esAjax) {
+        if (self::esAjax()) {
             extract($datos);
-            include __DIR__ . '/../views/autores/_tabla.php';
-            exit;
+            require __DIR__ . '/../views/autores/_tabla.php';
+            return;
         }
 
         $router->render('autores/index', $datos);
@@ -51,132 +51,121 @@ class AutorController
     /** Muestra el formulario de creación y procesa el guardado */
     public static function crear(Router $router): void
     {
-        $autor = new Autores();
-        $errores = [];
+        Auth::isAuth();
 
-        // Detectamos si la petición es AJAX
-        $esAjax = isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
+        $autor = new Autores();
+        $alertas = [];
+        $esAjax = self::esAjax();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $datos = $_POST;
 
-            $autor->sincronizar($_POST);
-            $errores = $autor->validar();
+            $autor->sincronizar($datos);
+            $alertas = $autor->validar();
 
-            if (empty($errores)) {
-                $resultado = $autor->guardar();
-
-                if ($resultado) {
-                    // RESPUESTA EXITOSA PARA AJAX
+            if (empty($alertas)) {
+                if ($autor->guardar()) {
                     if ($esAjax) {
-                        header('Content-Type: application/json');
-                        echo json_encode([
-                            'exito' => true,
-                            'mensaje' => 'Autor creado correctamente',
+                        self::responderJson([
+                            'exito'       => true,
+                            'ok'          => true,
+                            'mensaje'     => 'Autor creado correctamente',
                             'redireccion' => '/autores?exito=1'
                         ]);
-                        exit;
                     }
 
-                    // RESPUESTA TRADICIONAL
                     header('Location: /autores?exito=1');
                     exit;
                 }
             }
 
-            // RESPUESTA DE ERRORES PARA AJAX
             if ($esAjax) {
-                header('Content-Type: application/json');
-                http_response_code(422); // Código 422: Unprocessable Entity
-                echo json_encode([
-                    'exito' => false,
-                    'errores' => $errores
-                ]);
-                exit;
+                self::responderJson([
+                    'exito'   => false,
+                    'ok'      => false,
+                    'alertas' => $alertas,
+                    'errores' => $alertas
+                ], 422);
             }
         }
 
-        // Carga de la vista normal (GET o fallback)
         $router->render('autores/crear', [
             'titulo'  => 'Nuevo Autor',
             'autor'   => $autor,
-            'errores' => $errores
+            'alertas' => $alertas,
+            'errores' => $alertas
         ]);
     }
 
+    /** Edita un autor existente en el catálogo global */
     public static function editar(Router $router): void
     {
+        Auth::isAuth();
+
         $id = (int) ($_GET['id'] ?? $_POST['id'] ?? 0);
         $autor = Autores::find($id);
-        $errores = [];
+        $alertas = [];
+        $esAjax = self::esAjax();
 
-        // Detectamos si la petición proviene de AJAX
-        $esAjax = isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
-
-        // 1. Si el registro no existe
+        // Validar existencia
         if (!$autor) {
             if ($esAjax) {
-                header('Content-Type: application/json');
-                http_response_code(404);
-                echo json_encode([
-                    'ok' => false,
+                self::responderJson([
+                    'exito'   => false,
+                    'ok'      => false,
                     'mensaje' => 'Autor no encontrado'
-                ]);
-                exit;
+                ], 404);
             }
 
-            // Si es navegación tradicional, redirigimos
             header('Location: /autores');
             exit;
         }
 
-        // 2. Procesamiento del Formulario (POST)
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $datos = $_POST;
 
-            $autor->sincronizar($_POST);
-            $errores = $autor->validar();
+            $autor->sincronizar($datos);
+            $alertas = $autor->validar();
 
-            if (empty($errores)) {
-                $autor->guardar();
+            if (empty($alertas)) {
+                if ($autor->guardar()) {
+                    if ($esAjax) {
+                        self::responderJson([
+                            'exito'       => true,
+                            'ok'          => true,
+                            'mensaje'     => 'Autor actualizado correctamente',
+                            'redireccion' => '/autores?exito=2'
+                        ]);
+                    }
 
-                // Respuesta Éxito
-                if ($esAjax) {
-                    header('Content-Type: application/json');
-                    echo json_encode([
-                        'ok' => true,
-                        'mensaje' => 'Autor actualizado correctamente',
-                        'redireccion' => '/autores?exito=2'
-                    ]);
+                    header('Location: /autores?exito=2');
                     exit;
                 }
-
-                header('Location: /autores?exito=2');
-                exit;
             }
 
-            // Respuesta Errores de Validación
             if ($esAjax) {
-                header('Content-Type: application/json');
-                http_response_code(422); // Unprocessable Entity
-                echo json_encode([
-                    'ok' => false,
-                    'errores' => $errores
-                ]);
-                exit;
+                self::responderJson([
+                    'exito'   => false,
+                    'ok'      => false,
+                    'alertas' => $alertas,
+                    'errores' => $alertas
+                ], 422);
             }
         }
 
-        // 3. Renderizado de la Vista (Navegación normal GET)
         $router->render('autores/editar', [
             'titulo'  => 'Editar Autor',
-            'autor'  => $autor,
-            'errores' => $errores
+            'autor'   => $autor,
+            'alertas' => $alertas,
+            'errores' => $alertas
         ]);
     }
 
-    /** Da de baja un género por ID (Soporta AJAX y Formularios Tradicionales) */
+    /** Da de baja lógica a un autor por ID */
     public static function baja(): void
     {
-        // 1. Seguridad: Solo permitimos peticiones POST para dar de baja
+        Auth::isAuth();
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: /autores');
             exit;
@@ -184,48 +173,40 @@ class AutorController
 
         $id = (int) ($_POST['id'] ?? 0);
         $autor = Autores::find($id);
+        $esAjax = self::esAjax();
 
-        // Detectamos si la petición proviene de AJAX
-        $esAjax = isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
-
-        // 2. Si el registro no existe
         if (!$autor) {
             if ($esAjax) {
-                header('Content-Type: application/json');
-                http_response_code(404);
-                echo json_encode([
-                    'ok' => false,
+                self::responderJson([
+                    'exito'   => false,
+                    'ok'      => false,
                     'mensaje' => 'El autor no existe o ya fue eliminado'
-                ]);
-                exit;
+                ], 404);
             }
 
             header('Location: /autores');
             exit;
         }
 
-        // 3. Ejecutamos la baja (Soft Delete o cambio de estado)
         $resultado = $autor->baja();
 
-        // 4. Respuesta para AJAX
         if ($esAjax) {
-            header('Content-Type: application/json');
-            http_response_code($resultado ? 200 : 500);
-            echo json_encode([
-                'ok' => (bool) $resultado,
+            self::responderJson([
+                'exito'   => (bool) $resultado,
+                'ok'      => (bool) $resultado,
                 'mensaje' => $resultado ? 'Autor dado de baja correctamente' : 'No se pudo realizar la baja'
-            ]);
-            exit;
+            ], $resultado ? 200 : 500);
         }
 
-        // 5. Respuesta para navegación tradicional HTML
         header('Location: /autores?exito=3');
         exit;
     }
 
+    /** Reactiva un autor inactivo */
     public static function alta(): void
     {
-        // 1. Seguridad: Solo permitimos POST
+        Auth::isAuth();
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: /autores');
             exit;
@@ -233,71 +214,79 @@ class AutorController
 
         $id = (int) ($_POST['id'] ?? 0);
         $autor = Autores::find($id);
+        $esAjax = self::esAjax();
 
-        // Detectamos si la petición proviene de AJAX
-        $esAjax = isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
-
-        // 2. Si el registro no existe
         if (!$autor) {
             if ($esAjax) {
-                header('Content-Type: application/json');
-                http_response_code(404);
-                echo json_encode([
-                    'ok' => false,
+                self::responderJson([
+                    'exito'   => false,
+                    'ok'      => false,
                     'mensaje' => 'El autor no existe o fue eliminado'
-                ]);
-                exit;
+                ], 404);
             }
 
             header('Location: /autores');
             exit;
         }
 
-        // 3. Ejecutamos el alta
         $resultado = $autor->alta();
 
-        // 4. Respuesta para AJAX
         if ($esAjax) {
-            header('Content-Type: application/json');
-            http_response_code($resultado ? 200 : 500);
-            echo json_encode([
-                'ok' => (bool) $resultado,
+            self::responderJson([
+                'exito'   => (bool) $resultado,
+                'ok'      => (bool) $resultado,
                 'mensaje' => $resultado ? 'Autor activado correctamente' : 'No se pudo activar el autor'
-            ]);
-            exit;
+            ], $resultado ? 200 : 500);
         }
 
-        // 5. Respuesta para navegación tradicional HTML
         header('Location: /autores?exito=4');
         exit;
     }
 
-        /**
-     * Muestra el listado de géneros inactivos
-     */
+    /** Muestra el listado de autores inactivos */
     public static function bajas(Router $router): void
     {
+        Auth::isAuth();
+
         $busqueda = trim($_GET['q'] ?? $_GET['busqueda'] ?? '');
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
 
-        // Si tu método de búsqueda o all() permite filtrar por inactivos (por ej. $activo = 0 o false)
-        $autores = Autores::all(false); 
+        $totalRegistros = Autores::total($busqueda, '0');
+        $totalPaginas = (int) ceil($totalRegistros / self::POR_PAGINA);
+
+        $autores = Autores::listar($busqueda, $pagina, self::POR_PAGINA, '0');
 
         $datos = [
-            'titulo'   => 'Autores Inactivos',
-            'generos'  => $autores,
-            'busqueda' => $busqueda
+            'titulo'       => 'Autores Inactivos',
+            'autores'      => $autores,
+            'busqueda'     => $busqueda,
+            'pagina'       => $pagina,
+            'totalPaginas' => $totalPaginas
         ];
 
-        // Detección de petición AJAX
-        $esAjax = isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
-
-        if ($esAjax) {
+        if (self::esAjax()) {
             extract($datos);
-            require __DIR__ . '/../views/autores/_tabla_bajas.php'; // o _tabla.php según tu estructura
+            require __DIR__ . '/../views/autores/_tabla_bajas.php';
             return;
         }
 
         $router->render('autores/bajas', $datos);
+    }
+
+    // =========================================================================
+    // MÉTODOS AUXILIARES
+    // =========================================================================
+
+    private static function esAjax(): bool
+    {
+        return isset($_GET['ajax']) || (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest');
+    }
+
+    private static function responderJson(array $data, int $codigoEstado = 200): never
+    {
+        header('Content-Type: application/json');
+        http_response_code($codigoEstado);
+        echo json_encode($data);
+        exit;
     }
 }

@@ -20,7 +20,8 @@ class Libros extends ActiveRecord
         'paginas',
         'estado',
         'portada',
-        'activo'
+        'activo',
+        'usuario_id'
     ];
 
     public ?int $id = null;
@@ -32,6 +33,7 @@ class Libros extends ActiveRecord
     public string $estado = 'pendiente';
     public ?string $portada = null;
     public int $activo = 1;
+    public ?int $usuario_id = null;
 
     public ?string $autor_nombre = null;
     public ?string $autor_apellido = null;
@@ -48,6 +50,7 @@ class Libros extends ActiveRecord
         $this->estado = $args['estado'] ?? 'pendiente';
         $this->portada = $args['portada'] ?? null;
         $this->activo = isset($args['activo']) ? (int) $args['activo'] : 1;
+        $this->usuario_id = isset($args['usuario_id']) && $args['usuario_id'] !== '' ? (int) $args['usuario_id'] : null;
 
         $this->autor_nombre = $args['autor_nombre'] ?? null;
         $this->autor_apellido = $args['autor_apellido'] ?? null;
@@ -56,38 +59,48 @@ class Libros extends ActiveRecord
 
     public function validar(): array
     {
-        static::$errores = [];
+        static::$alertas = [];
 
         if (trim($this->titulo) === '') {
-            static::$errores[] = 'El título es obligatorio';
+            self::setAlerta('error', 'El título es obligatorio');
+        }
+
+        if (!$this->autor_id) {
+            self::setAlerta('error', 'El autor es obligatorio');
+        }
+
+        if (!$this->genero_id) {
+            self::setAlerta('error', 'El género es obligatorio');
         }
 
         $anioActual = (int) date('Y');
         if ($this->anio !== null && ($this->anio < 0 || $this->anio > $anioActual)) {
-            static::$errores[] = "El año debe estar entre 0 y {$anioActual}";
+            self::setAlerta('error', "El año debe estar entre 0 y {$anioActual}");
         }
 
         if ($this->paginas !== null && $this->paginas < 1) {
-            static::$errores[] = 'La cantidad de páginas no es válida';
+            self::setAlerta('error', 'La cantidad de páginas no es válida');
         }
 
         $estadosPermitidos = ['pendiente', 'en_progreso', 'leido'];
-        if (!in_array($this->estado, $estadosPermitidos)) {
-            static::$errores[] = 'Estado inválido';
+        if (!in_array($this->estado, $estadosPermitidos, true)) {
+            self::setAlerta('error', 'Estado inválido');
         }
 
-        return static::$errores;
+        return static::$alertas;
     }
 
     /**
-     * Cuenta el total de libros según filtros (incluye JOINs para búsqueda avanzada).
+     * Cuenta el total de libros pertenecientes al usuario actual según filtros.
      */
-    public static function total(string $busqueda = '', string|int $activo = '1'): int 
+    public static function total(string $busqueda = '', string|int $activo = '1', int $usuarioId = 0): int 
     {
+        $usuarioId = $usuarioId ?: (int) ($_SESSION['id'] ?? $_SESSION['usuario_id'] ?? 0);
+        
         $sql = "SELECT COUNT(*) FROM libros
                 LEFT JOIN autores ON autores.id = libros.autor_id
                 LEFT JOIN generos ON generos.id = libros.genero_id
-                WHERE 1 = 1";
+                WHERE libros.usuario_id = :usuario_id";
 
         if ($activo !== 'todos') {
             $sql .= " AND libros.activo = :activo";
@@ -103,6 +116,7 @@ class Libros extends ActiveRecord
         }
 
         $stmt = self::$db->prepare($sql);
+        $stmt->bindValue(':usuario_id', $usuarioId, PDO::PARAM_INT);
 
         if ($activo !== 'todos') {
             $stmt->bindValue(':activo', (int)$activo, PDO::PARAM_INT);
@@ -118,14 +132,17 @@ class Libros extends ActiveRecord
     }
 
     /**
-     * Lista libros filtrados por búsqueda, paginación y estado ('1', '0' o 'todos').
+     * Lista los libros del usuario logueado con paginación, filtros y relaciones.
      */
     public static function listar(
         string $busqueda = '',
         int $pagina = 1,
         int $porPagina = 10,
-        string|int $activo = '1'
+        string|int $activo = '1',
+        int $usuarioId = 0
     ): array {
+        $usuarioId = $usuarioId ?: (int) ($_SESSION['id'] ?? $_SESSION['usuario_id'] ?? 0);
+
         $offset = ($pagina - 1) * $porPagina;
 
         $sql = "SELECT 
@@ -136,7 +153,7 @@ class Libros extends ActiveRecord
                 FROM libros
                 LEFT JOIN autores ON autores.id = libros.autor_id
                 LEFT JOIN generos ON generos.id = libros.genero_id
-                WHERE 1 = 1 ";
+                WHERE libros.usuario_id = :usuario_id ";
 
         if ($activo !== 'todos') {
             $sql .= " AND libros.activo = :activo ";
@@ -154,6 +171,7 @@ class Libros extends ActiveRecord
         $sql .= " ORDER BY libros.id DESC LIMIT :limite OFFSET :offset ";
 
         $stmt = self::$db->prepare($sql);
+        $stmt->bindValue(':usuario_id', $usuarioId, PDO::PARAM_INT);
 
         if ($activo !== 'todos') {
             $stmt->bindValue(':activo', (int)$activo, PDO::PARAM_INT);
@@ -169,5 +187,27 @@ class Libros extends ActiveRecord
         $stmt->execute();
 
         return static::crearObjetos($stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    public static function obtenerPublicos(int $limite = 8): array 
+    {
+        $sql = "SELECT 
+                    libros.*, 
+                    autores.nombre AS autor_nombre, 
+                    autores.apellido AS autor_apellido, 
+                    generos.nombre AS genero_nombre
+                FROM libros
+                INNER JOIN usuarios ON usuarios.id = libros.usuario_id
+                LEFT JOIN autores ON autores.id = libros.autor_id
+                LEFT JOIN generos ON generos.id = libros.genero_id
+                WHERE libros.activo = 1 AND usuarios.admin = 1
+                ORDER BY libros.id DESC 
+                LIMIT :limite";
+
+        $stmt = self::$db->prepare($sql);
+        $stmt->bindValue(':limite', $limite, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return static::crearObjetos($stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 }

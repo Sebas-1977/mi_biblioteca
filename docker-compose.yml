@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:80"
+    environment:
+      DB_HOST: "mysql-11ae5ea0-mi-biblioteca...aivencloud.com" # Cambiá por tu Host de Aiven
+      DB_PORT: "21972"
+      DB_USER: "avnadmin"
+      DB_PASS: "tu_password_de_aiven"
+      DB_NAME: "defaultdb"
+    volumes:
+      - .:/var/www/html # Vincula tu código local con el contenedor

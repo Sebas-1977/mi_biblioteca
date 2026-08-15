@@ -1,24 +1,29 @@
 <?php
+// 1. Primero siempre la protección de autenticación
+if (!isset($_SESSION['login']) || !$_SESSION['login']) {
+    header('Location: /login');
+    exit;
+    }
+
 /** @var string $titulo */
 /** @var \Model\Libros $libro */
 /** @var \Model\Generos[] $generos */
 /** @var \Model\Autores[] $autores */
-/** @var array $errores */
-$errores = $errores ?? [];
+/** @var array $alertas */
 
-// Si viene una variable $error como string individual, la sumamos al array de errores
-if (!empty($error) && is_string($error)) {
-    $errores[] = $error;
-}
+// Inicializamos $alertas si no está definida
+$alertas = $alertas ?? [];
 ?>
 
-<?php if (!empty($errores)): ?>
+<?php if (!empty($alertas)): ?>
     <div class="alertas-contenedor" role="alert" aria-live="polite">
-        <?php foreach ($errores as $err): ?>
-            <div class="alerta alerta-error">
-                <span><?= htmlspecialchars($err); ?></span>
-                <button type="button" class="btn-cerrar-alerta" onclick="desvanecerElemento(this.closest('.alerta'))">&times;</button>
-            </div>
+        <?php foreach ($alertas as $tipo => $mensajes): ?>
+            <?php foreach ($mensajes as $mensaje): ?>
+                <div class="alerta alerta-<?= htmlspecialchars($tipo); ?>">
+                    <span><?= htmlspecialchars($mensaje); ?></span>
+                    <button type="button" class="btn-cerrar-alerta" onclick="desvanecerElemento(this.closest('.alerta'))">&times;</button>
+                </div>
+            <?php endforeach; ?>
         <?php endforeach; ?>
     </div>
 <?php endif; ?>
@@ -38,7 +43,7 @@ if (!empty($error) && is_string($error)) {
                     type="text"
                     id="titulo"
                     name="titulo"
-                    value="<?= htmlspecialchars($libro->titulo) ?>"
+                    value="<?= htmlspecialchars($libro->titulo ?? '') ?>"
                     required
                     aria-required="true"
                 >
@@ -53,7 +58,7 @@ if (!empty($error) && is_string($error)) {
                     <?php foreach ($autores as $autor): ?>
                         <option
                             value="<?= $autor->id ?>"
-                            <?= $libro->autor_id == $autor->id ? 'selected' : '' ?>
+                            <?= ($libro->autor_id ?? '') == $autor->id ? 'selected' : '' ?>
                         >
                             <?= htmlspecialchars($autor->nombre . ' ' . $autor->apellido) ?>
                         </option>
@@ -70,7 +75,7 @@ if (!empty($error) && is_string($error)) {
                     <?php foreach ($generos as $genero): ?>
                         <option
                             value="<?= $genero->id ?>"
-                            <?= $libro->genero_id == $genero->id ? 'selected' : '' ?>
+                            <?= ($libro->genero_id ?? '') == $genero->id ? 'selected' : '' ?>
                         >
                             <?= htmlspecialchars($genero->nombre) ?>
                         </option>
@@ -84,9 +89,10 @@ if (!empty($error) && is_string($error)) {
                     type="number"
                     id="anio"
                     name="anio"
-                    min="1000"
+                    min="0"
                     max="<?= date('Y') ?>"
                     value="<?= htmlspecialchars($libro->anio ?? '') ?>"
+                    placeholder="Ej: 1967"
                 >
             </div>
 
@@ -104,9 +110,9 @@ if (!empty($error) && is_string($error)) {
             <div class="campo">
                 <label for="estado">Estado de lectura</label>
                 <select name="estado" id="estado">
-                    <option value="pendiente" <?= $libro->estado === 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
-                    <option value="en_progreso" <?= $libro->estado === 'en_progreso' ? 'selected' : '' ?>>En Progreso</option>
-                    <option value="leido" <?= $libro->estado === 'leido' ? 'selected' : '' ?>>Leído</option>
+                    <option value="pendiente" <?= ($libro->estado ?? '') === 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
+                    <option value="en_progreso" <?= ($libro->estado ?? '') === 'en_progreso' ? 'selected' : '' ?>>En Progreso</option>
+                    <option value="leido" <?= ($libro->estado ?? '') === 'leido' ? 'selected' : '' ?>>Leído</option>
                 </select>
             </div>
 
@@ -126,7 +132,7 @@ if (!empty($error) && is_string($error)) {
         <?php if (!empty($libro->portada)): ?>
             <div class="preview-portada">
                 <p class="preview-titulo">Portada actual:</p>
-                <img src="<?= htmlspecialchars($libro->portada) ?>" alt="Portada actual de <?= htmlspecialchars($libro->titulo) ?>">
+                <img src="<?= htmlspecialchars($libro->portada) ?>" alt="Portada actual de <?= htmlspecialchars($libro->titulo ?? '') ?>">
             </div>
         <?php endif; ?>
 
@@ -138,7 +144,7 @@ if (!empty($error) && is_string($error)) {
                     id="activo_1" 
                     name="activo" 
                     value="1" 
-                    <?= $libro->activo ? 'checked' : '' ?>
+                    <?= ($libro->activo ?? 1) ? 'checked' : '' ?>
                 >
                 <label for="activo_1">Activo</label>
 
@@ -147,7 +153,7 @@ if (!empty($error) && is_string($error)) {
                     id="activo_0" 
                     name="activo" 
                     value="0" 
-                    <?= !$libro->activo ? 'checked' : '' ?>
+                    <?= isset($libro->activo) && !$libro->activo ? 'checked' : '' ?>
                 >
                 <label for="activo_0">Inactivo</label>
             </div>

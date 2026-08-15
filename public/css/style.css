@@ -655,3 +655,223 @@ td.acciones .btn-alta {
   border-top: 1px solid var(--border-color);
   margin-top: 4rem;
 }
+
+/* ==========================================================================
+   9. MÓDULO DE AUTENTICACIÓN (LOGIN, REGISTRO, RECUPERACIÓN)
+   ========================================================================== */
+.auth {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  padding: 1rem;
+}
+
+.auth__card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 450px;
+  padding: 2.5rem 2rem;
+}
+
+.auth__header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.auth__titulo {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+}
+
+.auth__descripcion {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.auth__subtitulo {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.auth__formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Extensión de inputs específicos para el formulario auth */
+.auth__formulario .campo input[type="email"],
+.auth__formulario .campo input[type="password"] {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-main);
+  font-size: 0.95rem;
+  color: var(--text-main);
+  transition: var(--transition);
+}
+
+.auth__formulario .campo input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.auth__submit {
+  width: 100%;
+  padding: 0.85rem;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  cursor: pointer;
+}
+
+.auth__acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.auth__enlace {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.auth__enlace:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+/* ==========================================
+   CATÁLOGO PÚBLICO - GRID & RESPONSIVE DESIGN
+   ========================================== */
+
+.contenedor {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+}
+
+.seccion h1 {
+    font-size: 2rem;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+}
+
+.descripcion-pagina {
+    color: #64748b;
+    font-size: 1.05rem;
+    margin-bottom: 2.5rem;
+}
+
+/* Layout Grid Adaptable */
+.grid-libros {
+    display: grid;
+    /* Genera columnas automáticas con un ancho mínimo de 220px */
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 2rem;
+}
+
+/* Tarjeta individual */
+.tarjeta-libro {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tarjeta-libro:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Imagen de Portada */
+.tarjeta-libro img {
+    width: 100%;
+    height: 290px;
+    object-fit: cover;
+    background-color: #f8fafc;
+}
+
+/* Fallback cuando no hay imagen */
+.sin-portada {
+    width: 100%;
+    height: 290px;
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Información del libro */
+.contenido-tarjeta {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-grow: 1;
+}
+
+.contenido-tarjeta h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    color: #1e293b;
+    line-height: 1.3;
+}
+
+.contenido-tarjeta p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+/* Mensaje informativo cuando está vacío */
+.alerta.info {
+    background-color: #e0e7ff;
+    color: #3730a3;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+/* Media Query para pantallas pequeñas (móviles) */
+@media (max-width: 480px) {
+    .contenedor {
+        padding: 1.5rem 1rem;
+    }
+
+    .grid-libros {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .tarjeta-libro img,
+    .sin-portada {
+        height: 340px;
+    }
+}

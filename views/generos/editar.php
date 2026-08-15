@@ -1,21 +1,26 @@
 <?php
+// 1. Primero siempre la protección de autenticación
+if (!isset($_SESSION['login']) || !$_SESSION['login']) {
+    header('Location: /login');
+    exit;
+}
 /** @var string $titulo */
 /** @var \Model\Generos $genero */
-/** @var array $errores */
-$errores = $errores ?? [];
-// Si viene una variable $error como string individual, la sumamos al array de errores
-if (!empty($error) && is_string($error)) {
-    $errores[] = $error;
-}
+/** @var array $alertas */
+
+// Inicializamos $alertas si no está definida
+$alertas = $alertas ?? [];
 ?>
 
-<?php if (!empty($errores)): ?>
+<?php if (!empty($alertas)): ?>
     <div class="alertas-contenedor" role="alert" aria-live="polite">
-        <?php foreach ($errores as $err): ?>
-            <div class="alerta alerta-error">
-                <span><?= htmlspecialchars($err); ?></span>
-                <button type="button" class="btn-cerrar-alerta" onclick="desvanecerElemento(this.closest('.alerta'))">&times;</button>
-            </div>
+        <?php foreach ($alertas as $tipo => $mensajes): ?>
+            <?php foreach ($mensajes as $mensaje): ?>
+                <div class="alerta alerta-<?= htmlspecialchars($tipo); ?>">
+                    <span><?= htmlspecialchars($mensaje); ?></span>
+                    <button type="button" class="btn-cerrar-alerta" onclick="desvanecerElemento(this.closest('.alerta'))">&times;</button>
+                </div>
+            <?php endforeach; ?>
         <?php endforeach; ?>
     </div>
 <?php endif; ?>
@@ -23,8 +28,8 @@ if (!empty($error) && is_string($error)) {
 <div class="form-card">
     <h2><?= htmlspecialchars($titulo ?? 'Editar Género') ?></h2>
 
-    <form method="POST" action="/generos/editar?id=<?= (int) $genero->id ?>" novalidate>
-        <input type="hidden" name="id" value="<?= (int) $genero->id ?>">
+    <form method="POST" action="/generos/editar?id=<?= (int) ($genero->id ?? 0) ?>" novalidate>
+        <input type="hidden" name="id" value="<?= (int) ($genero->id ?? 0) ?>">
 
         <div class="form-grid">
             <div class="campo">
@@ -35,7 +40,7 @@ if (!empty($error) && is_string($error)) {
                     type="text"
                     id="nombre"
                     name="nombre"
-                    value="<?= htmlspecialchars($genero->nombre) ?>"
+                    value="<?= htmlspecialchars($genero->nombre ?? '') ?>"
                     required
                     aria-required="true"
                 >
@@ -60,7 +65,7 @@ if (!empty($error) && is_string($error)) {
                     id="activo_1" 
                     name="activo" 
                     value="1" 
-                    <?= $genero->activo ? 'checked' : '' ?>
+                    <?= ($genero->activo ?? 1) ? 'checked' : '' ?>
                 >
                 <label for="activo_1">Activo</label>
 
@@ -69,7 +74,7 @@ if (!empty($error) && is_string($error)) {
                     id="activo_0" 
                     name="activo" 
                     value="0" 
-                    <?= !$genero->activo ? 'checked' : '' ?>
+                    <?= isset($genero->activo) && !$genero->activo ? 'checked' : '' ?>
                 >
                 <label for="activo_0">Inactivo</label>
             </div>
