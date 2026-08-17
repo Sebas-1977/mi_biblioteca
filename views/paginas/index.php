@@ -14,6 +14,7 @@
                                 src="<?= htmlspecialchars((string) $libro->portada); ?>" 
                                 alt="Portada de <?= htmlspecialchars((string) $libro->titulo); ?>"
                                 loading="lazy"
+                                onerror="this.onerror=null; this.src='/img/gemini-svg.svg';"
                             >
                         <?php else: ?>
                             <div class="sin-portada">Sin imagen</div>

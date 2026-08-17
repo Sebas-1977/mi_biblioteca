@@ -54,7 +54,9 @@ $pagina = $pagina ?? 1;
                         <?php if (!empty($libro->portada)): ?>
                             <img src="<?= htmlspecialchars($libro->portada) ?>" 
                                  alt="Portada de <?= htmlspecialchars($libro->titulo) ?>" 
-                                 width="45">
+                                 width="45"
+                                 onerror="this.onerror=null; this.src='/img/gemini-svg.svg';"
+                                 >
                         <?php else: ?>
                             Sin imagen
                         <?php endif; ?>
