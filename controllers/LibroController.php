@@ -66,9 +66,11 @@ class LibroController
             $datos = $_POST;
             $datos['usuario_id'] = $usuarioId;
 
-            $nombreImagen = self::procesarPortada($_FILES['portada'] ?? null);
-            if ($nombreImagen) {
-                $datos['portada'] = '/img/portadas/' . $nombreImagen;
+            // procesarPortada() ya devuelve la ruta local (/img/portadas/xxx.jpg) 
+            // o la URL HTTPS de Cloudinary (https://res.cloudinary.com/...)
+            $portadaProcesada = self::procesarPortada($_FILES['portada'] ?? null);
+            if ($portadaProcesada) {
+                $datos['portada'] = $portadaProcesada;
             }
 
             $libro->sincronizar($datos);
@@ -89,7 +91,8 @@ class LibroController
                     exit;
                 }
             } else {
-                if ($nombreImagen && !empty($datos['portada'])) {
+                    // Si hubo error de validación y se llegó a subir la imagen, se borra
+                if ($portadaProcesada && !empty($datos['portada'])) {
                     self::eliminarArchivoPortada($datos['portada']);
                     $libro->portada = '';
                 }
@@ -147,10 +150,10 @@ class LibroController
             $datos['usuario_id'] = $usuarioId;
             $imagenAnterior = $libro->portada;
 
-            $nombreImagen = self::procesarPortada($_FILES['portada'] ?? null);
+            $portadaProcesada = self::procesarPortada($_FILES['portada'] ?? null);
 
-            if ($nombreImagen) {
-                $datos['portada'] = '/img/portadas/' . $nombreImagen;
+            if ($portadaProcesada) {
+                $datos['portada'] = $portadaProcesada;
             } else {
                 $datos['portada'] = $imagenAnterior;
             }
@@ -160,7 +163,8 @@ class LibroController
 
             if (empty($alertas)) {
                 if ($libro->guardar()) {
-                    if ($nombreImagen && !empty($imagenAnterior) && $imagenAnterior !== $datos['portada']) {
+                    // Si se subió una nueva portada y había una anterior diferente, elimina la vieja
+                    if ($portadaProcesada && !empty($imagenAnterior) && $imagenAnterior !== $datos['portada']) {
                         self::eliminarArchivoPortada($imagenAnterior);
                     }
 
@@ -177,7 +181,8 @@ class LibroController
                     exit;
                 }
             } else {
-                if ($nombreImagen) {
+                // Si la validación falla y se subió un archivo nuevo, borra el archivo nuevo subido
+                if ($portadaProcesada) {
                     self::eliminarArchivoPortada($datos['portada']);
                     $libro->portada = $imagenAnterior;
                 }
@@ -338,14 +343,13 @@ class LibroController
         exit;
     }
 
-    private static function procesarPortada(?array $file): ?string
+        private static function procesarPortada(?array $file): ?string
     {
         if (!$file || $file['error'] !== UPLOAD_ERR_OK || empty($file['tmp_name'])) {
             return null;
         }
 
         $mimeType = mime_content_type($file['tmp_name']);
-        
         $extension = match ($mimeType) {
             'image/jpeg' => 'jpg',
             'image/png'  => 'png',
@@ -357,6 +361,32 @@ class LibroController
             return null;
         }
 
+        $driver = $_ENV['FS_DRIVER'] ?? 'local';
+
+        // OPCIÓN 1: CLOUDINARY (Render / Producción)
+        if ($driver === 'cloudinary') {
+            try {
+                $cloudinary = new \Cloudinary\Cloudinary([
+                    'cloud' => [
+                        'cloud_name' => $_ENV['CLOUDINARY_CLOUD_NAME'] ?? '',
+                        'api_key'    => $_ENV['CLOUDINARY_API_KEY'] ?? '',
+                        'api_secret' => $_ENV['CLOUDINARY_API_SECRET'] ?? '',
+                    ],
+                    'url' => ['secure' => true]
+                ]);
+
+                $respuesta = $cloudinary->uploadApi()->upload($file['tmp_name'], [
+                    'folder' => 'portadas'
+                ]);
+
+                return $respuesta['secure_url'] ?? null;
+            } catch (\Exception $e) {
+                error_log("Error Cloudinary: " . $e->getMessage());
+                return null;
+            }
+        }
+
+        // OPCIÓN 2: LOCAL (Servidor local)
         if (!is_dir(self::CARPETA_PORTADAS)) {
             mkdir(self::CARPETA_PORTADAS, 0755, true);
         }
@@ -364,7 +394,7 @@ class LibroController
         $nombreUnico = bin2hex(random_bytes(16)) . '.' . $extension;
         $destino = self::CARPETA_PORTADAS . $nombreUnico;
 
-        return move_uploaded_file($file['tmp_name'], $destino) ? $nombreUnico : null;
+        return move_uploaded_file($file['tmp_name'], $destino) ? '/img/portadas/' . $nombreUnico : null;
     }
 
     private static function eliminarArchivoPortada(?string $rutaOImagen): void
@@ -373,14 +403,36 @@ class LibroController
             return;
         }
 
-        $nombreArchivo = basename($rutaOImagen);
+        // Eliminar de Cloudinary si es un enlace remoto
+        if (str_contains($rutaOImagen, 'cloudinary.com')) {
+            try {
+                $path = parse_url($rutaOImagen, PHP_URL_PATH);
+                $partes = explode('/', $path);
+                $nombreConExtension = end($partes);
+                $publicId = 'portadas/' . pathinfo($nombreConExtension, PATHINFO_FILENAME);
 
+                $cloudinary = new \Cloudinary\Cloudinary([
+                    'cloud' => [
+                        'cloud_name' => $_ENV['CLOUDINARY_CLOUD_NAME'] ?? '',
+                        'api_key'    => $_ENV['CLOUDINARY_API_KEY'] ?? '',
+                        'api_secret' => $_ENV['CLOUDINARY_API_SECRET'] ?? '',
+                    ]
+                ]);
+
+                $cloudinary->uploadApi()->destroy($publicId);
+            } catch (\Exception $e) {
+                error_log("Error al eliminar de Cloudinary: " . $e->getMessage());
+            }
+            return;
+        }
+
+        // Eliminar de disco local
+        $nombreArchivo = basename($rutaOImagen);
         if ($nombreArchivo === '.gitkeep') {
             return;
         }
 
         $rutaAbsoluta = self::CARPETA_PORTADAS . $nombreArchivo;
-
         if (file_exists($rutaAbsoluta) && is_file($rutaAbsoluta)) {
             unlink($rutaAbsoluta);
         }
