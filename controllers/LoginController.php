@@ -34,7 +34,23 @@ class LoginController
      */
     public static function login(Router $router): void
     {
-        $alertas = [];
+        // 1. Iniciamos la sesión para comprobar si hay alertas guardadas
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+            // 1. Escenario GET: Si viene de restablecer (o cualquier otra ruta con mensaje previo en sesión)
+        if (isset($_SESSION['alertas'])) {
+            foreach ($_SESSION['alertas'] as $tipo => $mensajes) {
+                foreach ($mensajes as $mensaje) {
+                    Usuarios::setAlerta($tipo, $mensaje);
+                }
+            }
+            unset($_SESSION['alertas']); // Se destruye para que no reaparezca en F5
+        }
+
+        // 2. Escenario GET común (o tras importar de sesión): extraemos el estado actual
+        $alertas = Usuarios::getAlertas();
         $esAjax = self::esAjax();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -300,15 +316,23 @@ class LoginController
                 $usuario->token = null;
 
                 if ($usuario->guardar()) {
+                    // Verificamos si no hay una sesión activa antes de iniciarla
+                    if (session_status() === PHP_SESSION_NONE) {
+                        session_start();
+                    }
+
+                    Usuarios::setAlerta('exito', 'Password restablecido correctamente. Ya puedes iniciar sesión.');
+                    $_SESSION['alertas'] = Usuarios::getAlertas();
+
                     if ($esAjax) {
                         self::respuestaJson([
                             'ok' => true,
                             'mensaje' => 'Password reestablecido con éxito',
-                            'redireccion' => '/'
+                            'redireccion' => '/login'
                         ]);
                     }
 
-                    header('Location: /');
+                    header('Location: /login');
                     exit;
                 }
             }
